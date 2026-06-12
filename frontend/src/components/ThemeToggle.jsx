@@ -7,10 +7,15 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+      className="relative w-9 h-9 flex items-center justify-center rounded-lg border border-[--color-border] dark:border-[--color-border-dark] hover:bg-white dark:hover:bg-[--color-surface-elevated-dark] cursor-pointer transition-colors text-[--color-muted] dark:text-[--color-muted-dark]"
       aria-label="Toggle dark mode"
     >
-      {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+      <span className="absolute transition-transform duration-300 rotate-0 dark:rotate-90">
+        <Sun size={15} />
+      </span>
+      <span className="absolute transition-transform duration-300 -rotate-90 dark:rotate-0">
+        <Moon size={15} />
+      </span>
     </button>
   )
 }

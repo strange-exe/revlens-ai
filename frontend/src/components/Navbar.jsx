@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, NavLink } from "react-router-dom"
-import { Menu, X, ExternalLink, User } from "lucide-react"
+import { Menu, X, ExternalLink } from "lucide-react"
 import ThemeToggle from "./ThemeToggle"
 
 const navLinks = [
@@ -14,21 +14,24 @@ export default function Navbar() {
   const [open, setOpen] = useState(false)
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm">
+    <nav className="sticky top-0 z-50 border-b border-[--color-border] dark:border-[--color-border-dark] bg-[--color-surface]/80 dark:bg-[--color-surface-dark]/80 backdrop-blur-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="text-xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400">
-            RevLens AI
+          <Link to="/" className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-[--color-brand-500] flex items-center justify-center text-white text-xs font-bold">R</span>
+            <span className="font-heading text-lg font-bold text-[--color-brand-600] dark:text-[--color-brand-300] tracking-tight">
+              RevLens
+            </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-8">
             {navLinks.map((l) => (
               <NavLink
                 key={l.to}
                 to={l.to}
                 end={l.to === "/"}
                 className={({ isActive }) =>
-                  `text-sm font-medium transition-colors ${isActive ? "text-indigo-600 dark:text-indigo-400" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"}`
+                  `text-sm font-medium tracking-wide transition-colors ${isActive ? "text-[--color-brand-500] dark:text-[--color-gold-400]" : "text-[--color-muted] dark:text-[--color-muted-dark] hover:text-[--color-brand-600] dark:hover:text-white"}`
                 }
               >
                 {l.label}
@@ -36,31 +39,30 @@ export default function Navbar() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <a
               href="https://github.com/strange-exe/revlens-ai"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-[--color-border] dark:border-[--color-border-dark] text-[--color-muted] dark:text-[--color-muted-dark] hover:bg-white dark:hover:bg-[--color-surface-elevated-dark] transition-colors"
             >
-              <ExternalLink size={14} />
-              GitHub
+              <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.73.083-.73 1.205.085 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12 24 5.37 18.63 0 12 0z"/></svg>
+              Source
             </a>
             <ThemeToggle />
-            <User size={20} className="text-gray-500 dark:text-gray-400" />
             <button
               onClick={() => setOpen(!open)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer"
+              className="md:hidden p-2 rounded-lg hover:bg-white dark:hover:bg-[--color-surface-elevated-dark] cursor-pointer text-[--color-muted] dark:text-[--color-muted-dark]"
             >
-              {open ? <X size={20} /> : <Menu size={20} />}
+              {open ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
         </div>
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
-          <div className="px-4 py-3 space-y-2">
+        <div className="md:hidden border-t border-[--color-border] dark:border-[--color-border-dark] bg-[--color-surface] dark:bg-[--color-surface-dark]">
+          <div className="px-4 py-3 space-y-1">
             {navLinks.map((l) => (
               <NavLink
                 key={l.to}
@@ -68,7 +70,7 @@ export default function Navbar() {
                 end={l.to === "/"}
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
-                  `block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? "bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`
+                  `block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? "bg-[--color-brand-100] dark:bg-[--color-brand-800] text-[--color-brand-600] dark:text-[--color-gold-400]" : "text-[--color-muted] dark:text-[--color-muted-dark] hover:bg-white dark:hover:bg-[--color-surface-elevated-dark]"}`
                 }
               >
                 {l.label}
@@ -78,7 +80,7 @@ export default function Navbar() {
               href="https://github.com/strange-exe/revlens-ai"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-[--color-muted] dark:text-[--color-muted-dark] hover:bg-white dark:hover:bg-[--color-surface-elevated-dark] rounded-lg"
             >
               <ExternalLink size={14} />
               GitHub

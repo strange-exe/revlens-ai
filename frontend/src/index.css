@@ -1,1 +1,55 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-heading: "Syne", sans-serif;
+  --font-body: "Sora", sans-serif;
+
+  --color-brand-50: #f0f7f4;
+  --color-brand-100: #dcece3;
+  --color-brand-200: #b8d9c7;
+  --color-brand-300: #86bea2;
+  --color-brand-400: #52a07c;
+  --color-brand-500: #2d6a4f;
+  --color-brand-600: #1a3c34;
+  --color-brand-700: #15312b;
+  --color-brand-800: #0f2621;
+  --color-brand-900: #0a1a16;
+
+  --color-gold-50: #fef9e7;
+  --color-gold-100: #fdf0c8;
+  --color-gold-200: #fbe38e;
+  --color-gold-300: #f5c542;
+  --color-gold-400: #e9c46a;
+  --color-gold-500: #d4a72c;
+  --color-gold-600: #b88a1f;
+  --color-gold-700: #966d18;
+  --color-gold-800: #7a5914;
+  --color-gold-900: #5c4210;
+
+  --color-surface: #faf9f6;
+  --color-surface-dark: #0f1a17;
+  --color-surface-elevated: #ffffff;
+  --color-surface-elevated-dark: #16231f;
+  --color-border: #e7e5e4;
+  --color-border-dark: #1f2e2a;
+  --color-muted: #78716c;
+  --color-muted-dark: #a8a29e;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: #1c1917;
+}
+
+.dark body,
+body.dark {
+  background-color: var(--color-surface-dark);
+  color: #e7e5e4;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
