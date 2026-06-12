@@ -8,6 +8,7 @@ import Reviews from "./pages/Reviews"
 import Analytics from "./pages/Analytics"
 import About from "./pages/About"
 import Login from "./pages/Login"
+import Pricing from "./pages/Pricing"
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="about" element={<About />} />
+            <Route path="pricing" element={<Pricing />} />
             <Route path="login" element={<Login />} />
           </Route>
           <Route path="dashboard" element={<DashboardLayout />}>

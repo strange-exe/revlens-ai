@@ -26,11 +26,11 @@
 
 ### Backend
 
-* Cloudflare Workers
+* FastAPI
 
 ### Database
 
-* Cloudflare D1
+* Supabase
 
 ### AI Integration
 
@@ -43,12 +43,8 @@
 ### Deployment
 
 * Cloudflare Pages
-* Cloudflare Workers
+* Railway
 
 ## Setup
 
     Coming soon.
-
-## Status
-
-    Week 1: Project Planning & Repository Setup
