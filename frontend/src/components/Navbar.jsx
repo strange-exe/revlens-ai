@@ -27,16 +27,46 @@ export default function Navbar() {
       <div className={`absolute inset-0 transition-opacity duration-500 ${scrolled ? "opacity-100" : "opacity-0"} noise-overlay`} />
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-18">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <span className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-(--color-brand-400) to-(--color-brand-600) flex items-center justify-center text-white text-sm font-bold shadow-sm overflow-hidden transition-transform duration-300 group-hover:scale-105">
-              <span className="absolute inset-0 bg-gradient-to-tr from-white/0 to-white/20" />
-              R
+          <Link to="/" className="flex items-center gap-2.5 group" aria-label="RevLens AI home">
+            {/* SVG Logo Mark */}
+            <span className="relative flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
+              <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs>
+                  <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#22c55e" />
+                    <stop offset="100%" stopColor="#15803d" />
+                  </linearGradient>
+                  <linearGradient id="logoGradDark" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#4ade80" />
+                    <stop offset="100%" stopColor="#16a34a" />
+                  </linearGradient>
+                  <filter id="logoShadow" x="-10%" y="-10%" width="120%" height="120%">
+                    <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.2" />
+                  </filter>
+                </defs>
+                {/* Background rounded square */}
+                <rect width="36" height="36" rx="9" fill="url(#logoGrad)" filter="url(#logoShadow)" />
+                {/* Shine overlay */}
+                <rect width="36" height="18" rx="9" fill="white" fillOpacity="0.12" />
+                {/* R letterform */}
+                <path
+                  d="M10 9h9.5a5 5 0 0 1 0 10H14.5l5.5 8H16l-5.5-8.2V9Z"
+                  fill="white"
+                  fillOpacity="0.95"
+                />
+                {/* Golden accent dot (lens glint) */}
+                <circle cx="26.5" cy="25.5" r="3.5" fill="#f5c542" />
+                <circle cx="26.5" cy="25.5" r="1.5" fill="#fde68a" fillOpacity="0.7" />
+              </svg>
             </span>
-            <span className="font-heading text-lg font-bold tracking-tight">
-              <span className="text-(--color-brand-600) dark:text-white">Rev</span>
-              <span className="text-(--color-gold-500) dark:text-(--color-gold-400)">Lens</span>
+            {/* Wordmark */}
+            <span className="font-heading text-lg font-bold tracking-tight leading-none">
+              <span className="text-(--color-brand-700) dark:text-white">Rev</span>
+              <span className="bg-gradient-to-r from-(--color-brand-500) to-(--color-gold-500) dark:from-(--color-brand-300) dark:to-(--color-gold-400) bg-clip-text text-transparent">Lens</span>
+              <span className="ml-1 text-[10px] font-semibold tracking-widest text-(--color-muted) dark:text-(--color-muted-dark) uppercase align-middle">AI</span>
             </span>
           </Link>
+
 
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((l) => (

@@ -154,3 +154,35 @@ vite.config.ts.timestamp-*
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# ── AI Coding Tools ──────────────────────────────────────────
+# Claude Code local session state
+.claude/
+
+# OpenCode session state
+.opencode/
+
+# Agent skill directories (machine-local)
+.agents/
+
+# ── Python / Backend ─────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+*.egg
+
+# ── Bun ──────────────────────────────────────────────────────
+.bun/
+bun.lockb
