@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom"
 import { Star, TrendingUp, MessageSquareText, BarChart3 } from "lucide-react"
 
-export default function Hero({ title, subtitle, ctaText, ctaLink }) {
+export default function Hero({ title, titleLines, subtitle, ctaText, ctaLink }) {
   return (
     <section className="relative min-h-[92vh] flex items-center overflow-hidden bg-gradient-to-b from-(--color-brand-50) to-(--color-surface) dark:from-[#091510] dark:to-(--color-surface-dark)">
       <div className="absolute inset-0 noise-overlay" />
@@ -37,10 +37,16 @@ export default function Hero({ title, subtitle, ctaText, ctaLink }) {
               AI-Powered Review Intelligence
             </div>
 
-            <h1
-              className="animate-slide-up font-heading text-5xl sm:text-7xl lg:text-8xl font-bold tracking-tighter leading-[0.9] text-(--color-brand-600) dark:text-white"
-              dangerouslySetInnerHTML={{ __html: title }}
-            />
+            <h1 className="animate-slide-up font-heading text-5xl sm:text-7xl lg:text-8xl font-bold tracking-tighter leading-[0.9] text-(--color-brand-600) dark:text-white">
+              {Array.isArray(titleLines)
+                ? titleLines.map((line, i) => (
+                    <span key={i}>
+                      {line}
+                      {i < titleLines.length - 1 && <br />}
+                    </span>
+                  ))
+                : title}
+            </h1>
 
             <p className="animate-slide-up mt-6 text-base sm:text-lg text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed max-w-xl delay-2">
               {subtitle}

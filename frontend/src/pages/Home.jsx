@@ -84,7 +84,7 @@ export default function Home() {
   return (
     <div ref={containerRef}>
       <Hero
-        title="Turn Reviews<br/>into Revenue"
+        titleLines={["Turn Reviews", "into Revenue"]}
         subtitle="AI-powered review intelligence for homestay owners. Analyze sentiment, detect themes, and generate smart responses — all in one dashboard."
         ctaText="Get Started"
         ctaLink="/dashboard"
