@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { useEffect } from "react"
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
 import { ThemeProvider } from "./context/ThemeContext"
 import { AuthProvider } from "./context/AuthContext"
 import { PropertyProvider } from "./context/PropertyContext"
@@ -15,12 +16,23 @@ import Pricing from "./pages/Pricing"
 import Assistant from "./pages/Assistant"
 import Properties from "./pages/Properties"
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
+  return null
+}
+
 export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <PropertyProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route element={<Layout />}>
                 <Route index element={<Home />} />

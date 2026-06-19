@@ -29,11 +29,11 @@ const testimonials = [
 
 export default function Testimonials() {
   return (
-    <section className="relative py-28 lg:py-36 overflow-hidden bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark)">
+    <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark)">
       <div className="absolute inset-0 noise-overlay" />
       <div className="absolute inset-0 grid-pattern" />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="reveal text-center mb-16">
           <span className="font-heading text-xs font-bold tracking-[0.2em] uppercase text-(--color-brand-400)">
             Testimonials

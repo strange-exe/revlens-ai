@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom"
 import { Button } from "../components/ui"
 import Hero from "../components/Hero"
-import Platforms from "../components/Platforms"
 import StatCounter from "../components/StatCounter"
 import Testimonials from "../components/Testimonials"
 import useScrollReveal from "../hooks/useScrollReveal"
@@ -92,11 +91,8 @@ export default function Home() {
         ctaLink="/dashboard"
       />
 
-      {/* Platforms Bar */}
-      <Platforms />
-
       {/* Features Section */}
-      <section className="relative py-28 lg:py-36 overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden">
         <div className="absolute inset-0 noise-overlay" />
         <div className="absolute inset-0 grid-pattern" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-(--color-brand-200)/15 dark:bg-(--color-brand-800)/15 blur-[120px]" />
@@ -145,12 +141,12 @@ export default function Home() {
       </section>
 
       {/* Stats Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-(--color-brand-600) to-(--color-brand-800) dark:from-(--color-brand-900) dark:to-black" />
         <div className="absolute inset-0 noise-overlay" />
         <div className="absolute inset-0 grid-pattern opacity-20" />
-        <div className="absolute top-0 left-1/3 w-[500px] h-[500px] rounded-full bg-(--color-brand-500)/5 blur-[120px]" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-28">
+        <div className="absolute top-0 left-1/3 w-[500px] h-[500px] rounded-full bg-(--color-brand-50)/5 blur-[120px]" />
+        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 lg:gap-16">
             {stats.map((s) => (
               <StatCounter key={s.label} value={s.value} label={s.label} />
@@ -160,7 +156,7 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="relative py-28 lg:py-36 overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden">
         <div className="absolute inset-0 noise-overlay" />
         <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-(--color-brand-100)/30 dark:bg-(--color-brand-800)/30 blur-[100px]" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -194,7 +190,7 @@ export default function Home() {
       </section>
 
       {/* Benefits Section */}
-      <section className="relative py-20 lg:py-28 overflow-hidden bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark)">
+      <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark)">
         <div className="absolute inset-0 noise-overlay" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="reveal text-center mb-14">
@@ -230,11 +226,11 @@ export default function Home() {
       <Testimonials />
 
       {/* CTA Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-(--color-brand-600) to-(--color-brand-900) dark:from-black dark:to-(--color-brand-900)" />
         <div className="absolute inset-0 noise-overlay" />
         <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] rounded-full bg-(--color-brand-500)/5 blur-[120px] -translate-x-1/2 -translate-y-1/2" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 lg:py-32">
+        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
           <div className="reveal max-w-2xl mx-auto text-center">
             <Quote size={32} className="text-(--color-brand-400)/40 mx-auto mb-6" />
             <h2 className="font-heading text-4xl sm:text-5xl font-bold text-white leading-tight">
@@ -255,10 +251,10 @@ export default function Home() {
                 Create Free Account
               </Button>
               <Button
-                variant="secondary"
+                variant="custom"
                 size="lg"
                 onClick={() => navigate("/pricing")}
-                className="border-white/20 text-white bg-transparent hover:bg-white/10 dark:bg-transparent dark:hover:bg-white/10"
+                className="border border-white/30 text-white bg-transparent hover:bg-white/10 dark:bg-transparent dark:hover:bg-white/10 w-full sm:w-auto"
               >
                 View Pricing
               </Button>

@@ -23,11 +23,11 @@ const values = [
 
 const timeline = [
   { phase: "Week 1", title: "Project Planning & Repository Setup", status: "done" },
-  { phase: "Week 2", title: "Frontend Skeleton & UI Components", status: "current" },
-  { phase: "Week 3", title: "Backend API & Database Setup", status: "upcoming" },
+  { phase: "Week 2", title: "Frontend Skeleton & UI Components", status: "done" },
+  { phase: "Week 3", title: "Backend API & Database Setup", status: "current" },
   { phase: "Week 4", title: "AI Integration with Gemini API", status: "upcoming" },
   { phase: "Week 5", title: "Dashboard Analytics & Charts", status: "upcoming" },
-  { phase: "Week 6", title: "Testing, Polish & Deployment", status: "upcoming" },
+  { phase: "Week 6", title: "Testing, Polish & Production", status: "upcoming" },
 ]
 
 export default function About() {
@@ -37,12 +37,12 @@ export default function About() {
   return (
     <div ref={containerRef}>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-(--color-brand-50) to-(--color-surface) dark:from-(--color-brand-900)/20 dark:to-(--color-surface-dark) pt-32 pb-20">
+      <section className="relative min-h-[100dvh] flex items-center overflow-hidden bg-gradient-to-b from-(--color-brand-50) to-(--color-surface) dark:from-(--color-brand-900)/20 dark:to-(--color-surface-dark) pt-32 pb-20">
         <div className="absolute inset-0 noise-overlay" />
         <div className="absolute inset-0 grid-pattern" />
         <div className="absolute -bottom-32 -left-32 w-[500px] h-[500px] rounded-full bg-(--color-brand-100)/10 dark:bg-(--color-brand-900)/10 blur-[100px]" />
 
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6">
+        <div className="relative w-full max-w-3xl mx-auto px-4 sm:px-6">
           <span className="reveal font-heading text-xs font-bold tracking-[0.2em] uppercase text-(--color-brand-400)">About</span>
           <h1 className="reveal font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-(--color-brand-600) dark:text-white mt-3 leading-tight">
             RevLens AI
@@ -63,7 +63,7 @@ export default function About() {
       </section>
 
       {/* Mission / Values */}
-      <section className="relative py-24 lg:py-32 overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden">
         <div className="absolute inset-0 noise-overlay" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="reveal text-center mb-14">
@@ -93,7 +93,7 @@ export default function About() {
       </section>
 
       {/* Tech Stack & Features Cards */}
-      <section className="relative py-20 lg:py-28 overflow-hidden bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark)">
+      <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark)">
         <div className="absolute inset-0 noise-overlay" />
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="reveal text-center mb-14">
@@ -160,7 +160,7 @@ export default function About() {
       </section>
 
       {/* Roadmap Timeline */}
-      <section className="relative py-24 lg:py-32 overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden">
         <div className="absolute inset-0 noise-overlay" />
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="reveal text-center mb-14">
@@ -219,10 +219,10 @@ export default function About() {
       </section>
 
       {/* CTA */}
-      <section className="relative overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-(--color-brand-600) to-(--color-brand-800) dark:from-(--color-brand-900) dark:to-black" />
         <div className="absolute inset-0 noise-overlay" />
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 py-20 lg:py-24 text-center">
+        <div className="relative w-full max-w-3xl mx-auto px-4 sm:px-6 py-20 lg:py-24 text-center">
           <h2 className="reveal font-heading text-3xl sm:text-4xl font-bold text-white leading-tight">
             Want to contribute?
           </h2>
@@ -239,9 +239,9 @@ export default function About() {
               View on GitHub
             </Button>
             <Button
-              variant="secondary"
+              variant="custom"
               onClick={() => navigate("/dashboard")}
-              className="border-white/20 text-white bg-transparent hover:bg-white/10 dark:bg-transparent dark:hover:bg-white/10 w-full sm:w-auto"
+              className="border border-white/30 text-white bg-transparent hover:bg-white/10 dark:bg-transparent dark:hover:bg-white/10 w-full sm:w-auto"
             >
               Try Dashboard
             </Button>

@@ -220,7 +220,7 @@ export default function Properties() {
       )}
 
       {/* Filter panel (Search, Location filters and Tab selectors) */}
-      <div className="widget-card rounded-2xl p-4 space-y-4">
+      <div className="widget-card rounded-2xl p-4 space-y-4 relative z-20">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Search inputs */}
           <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">

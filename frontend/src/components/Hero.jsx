@@ -1,12 +1,13 @@
 import { useNavigate } from "react-router-dom"
 import { Button } from "./ui"
 import { Star, TrendingUp, MessageSquareText, BarChart3 } from "lucide-react"
+import Platforms from "./Platforms"
 
 export default function Hero({ title, titleLines, subtitle, ctaText, ctaLink }) {
   const navigate = useNavigate()
 
   return (
-    <section className="relative min-h-[92vh] flex items-center overflow-hidden bg-gradient-to-b from-(--color-brand-50) to-(--color-surface) dark:from-(--color-brand-900)/20 dark:to-(--color-surface-dark)">
+    <section className="relative min-h-[100dvh] flex flex-col justify-between overflow-hidden bg-gradient-to-b from-(--color-brand-50) to-(--color-surface) dark:from-(--color-brand-900)/20 dark:to-(--color-surface-dark) pt-24 pb-6">
       <div className="absolute inset-0 noise-overlay" />
 
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -28,8 +29,8 @@ export default function Hero({ title, titleLines, subtitle, ctaText, ctaLink }) 
         <div className="absolute bottom-[30%] right-[30%] w-px h-28 bg-gradient-to-t from-(--color-accent-300)/15 to-transparent dark:from-(--color-accent-700)/15" />
       </div>
 
-      <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 lg:py-36">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:gap-16">
+      <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex-1 flex items-center">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:gap-16 w-full">
           {/* Left: Copy */}
           <div className="flex-1 max-w-2xl">
             <div className="animate-slide-up-sm inline-flex items-center gap-2.5 px-4 py-2 rounded-full glass text-xs font-semibold tracking-wide text-(--color-brand-500) dark:text-(--color-brand-300) mb-8">
@@ -160,6 +161,7 @@ export default function Hero({ title, titleLines, subtitle, ctaText, ctaLink }) 
           </div>
         </div>
       </div>
+      <Platforms nested={true} />
     </section>
   )
 }

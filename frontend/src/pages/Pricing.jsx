@@ -119,12 +119,12 @@ export default function Pricing() {
   return (
     <div ref={containerRef}>
       {/* Hero Banner */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-(--color-brand-50) to-(--color-surface) dark:from-(--color-brand-900)/20 dark:to-(--color-surface-dark) pt-32 pb-20">
+      <section className="relative min-h-[100dvh] flex items-center overflow-hidden bg-gradient-to-b from-(--color-brand-50) to-(--color-surface) dark:from-(--color-brand-900)/20 dark:to-(--color-surface-dark) pt-32 pb-20">
         <div className="absolute inset-0 noise-overlay" />
         <div className="absolute inset-0 grid-pattern" />
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-(--color-brand-200)/20 dark:bg-(--color-brand-800)/30 blur-[120px]" />
 
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
+        <div className="relative w-full max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <span className="reveal font-heading text-xs font-bold tracking-[0.2em] uppercase text-(--color-brand-400)">
             Pricing
           </span>
@@ -138,7 +138,7 @@ export default function Pricing() {
       </section>
 
       {/* Pricing Cards */}
-      <section className="relative py-20 lg:py-28 overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden">
         <div className="absolute inset-0 noise-overlay" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start max-w-lg lg:max-w-none mx-auto">
@@ -231,7 +231,7 @@ export default function Pricing() {
       </section>
 
       {/* FAQ Section */}
-      <section className="relative py-20 lg:py-28 overflow-hidden bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark)">
+      <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark)">
         <div className="absolute inset-0 noise-overlay" />
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="reveal text-center mb-14">

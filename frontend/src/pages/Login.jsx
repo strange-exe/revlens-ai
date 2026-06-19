@@ -28,7 +28,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-[88vh] flex items-stretch">
+    <div className="min-h-[calc(100dvh-4rem)] sm:min-h-[calc(100dvh-4.5rem)] flex items-stretch">
       {/* Full screen loader simulation overlay */}
       {isLoggingIn && (
         <Loader fullPage variant="dots" text="Loading your dashboard workspace..." />

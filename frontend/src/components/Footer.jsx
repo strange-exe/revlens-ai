@@ -51,7 +51,7 @@ export default function Footer() {
           </div>
           <div>
             <h4 className="text-[11px] font-bold tracking-[0.15em] uppercase text-(--color-muted) dark:text-(--color-muted-dark) mb-4">Connect</h4>
-            <div className="space-y-2.5">
+            <div className="flex flex-col gap-2.5 items-start">
               <a
                 href="https://github.com/strange-exe"
                 target="_blank"
