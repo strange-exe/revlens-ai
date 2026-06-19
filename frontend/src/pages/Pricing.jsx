@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
+import { Button } from "../components/ui"
 import { Check, Sparkles, Building2, Zap, ArrowRight, ChevronDown, ChevronUp } from "lucide-react"
 import useScrollReveal from "../hooks/useScrollReveal"
 import { useState } from "react"
@@ -113,11 +114,12 @@ function FaqItem({ faq }) {
 
 export default function Pricing() {
   const containerRef = useScrollReveal()
+  const navigate = useNavigate()
 
   return (
     <div ref={containerRef}>
       {/* Hero Banner */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-(--color-brand-50) to-(--color-surface) dark:from-[#091510] dark:to-(--color-surface-dark) pt-32 pb-20">
+      <section className="relative overflow-hidden bg-gradient-to-b from-(--color-brand-50) to-(--color-surface) dark:from-(--color-brand-900)/20 dark:to-(--color-surface-dark) pt-32 pb-20">
         <div className="absolute inset-0 noise-overlay" />
         <div className="absolute inset-0 grid-pattern" />
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-(--color-brand-200)/20 dark:bg-(--color-brand-800)/30 blur-[120px]" />
@@ -139,7 +141,7 @@ export default function Pricing() {
       <section className="relative py-20 lg:py-28 overflow-hidden">
         <div className="absolute inset-0 noise-overlay" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start max-w-lg lg:max-w-none mx-auto">
             {plans.map((plan, i) => (
               <div
                 key={plan.name}
@@ -156,12 +158,12 @@ export default function Pricing() {
                 )}
 
                 {plan.highlighted && (
-                  <div className="absolute -top-px left-0 right-0 h-1 bg-gradient-to-r from-(--color-gold-300) via-(--color-gold-400) to-(--color-gold-300)" />
+                  <div className="absolute -top-px left-0 right-0 h-1 bg-gradient-to-r from-(--color-accent-400) via-(--color-brand-400) to-(--color-accent-400)" />
                 )}
 
                 {plan.highlighted && (
                   <div className="flex justify-center pt-4">
-                    <span className="px-4 py-1 rounded-full bg-(--color-gold-400) text-(--color-brand-900) text-[10px] font-bold uppercase tracking-wider shadow-lg">
+                    <span className="px-4 py-1 rounded-full bg-(--color-accent-500) text-black text-[10px] font-bold uppercase tracking-wider shadow-lg">
                       Most Popular
                     </span>
                   </div>
@@ -169,7 +171,7 @@ export default function Pricing() {
 
                 <div className="p-7">
                   <div className={`p-3 rounded-xl w-fit mb-4 ${plan.highlighted ? "bg-white/10" : "bg-(--color-brand-50) dark:bg-(--color-brand-800)"}`}>
-                    <span className={plan.highlighted ? "text-(--color-gold-300)" : "text-(--color-brand-500) dark:text-(--color-brand-300)"}>
+                    <span className={plan.highlighted ? "text-(--color-accent-400)" : "text-(--color-brand-500) dark:text-(--color-brand-300)"}>
                       {plan.icon}
                     </span>
                   </div>
@@ -198,8 +200,8 @@ export default function Pricing() {
                   <ul className="space-y-3 mb-8">
                     {plan.features.map((f) => (
                       <li key={f} className="flex items-center gap-2.5 text-sm">
-                        <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${plan.highlighted ? "bg-(--color-gold-400)/20" : "bg-(--color-brand-50) dark:bg-(--color-brand-800)"}`}>
-                          <Check size={10} className={`shrink-0 ${plan.highlighted ? "text-(--color-gold-300)" : "text-(--color-brand-400)"}`} strokeWidth={3} />
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${plan.highlighted ? "bg-(--color-accent-500)/20" : "bg-(--color-brand-50) dark:bg-(--color-brand-800)"}`}>
+                          <Check size={10} className={`shrink-0 ${plan.highlighted ? "text-(--color-accent-400)" : "text-(--color-brand-400)"}`} strokeWidth={3} />
                         </div>
                         <span className={plan.highlighted ? "text-white/80" : "text-(--color-muted) dark:text-(--color-muted-dark)"}>
                           {f}
@@ -208,17 +210,19 @@ export default function Pricing() {
                     ))}
                   </ul>
 
-                  <Link
-                    to={plan.ctaLink}
-                    className={`group flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+                  <Button
+                    variant={plan.highlighted ? "secondary" : "primary"}
+                    onClick={() => navigate(plan.ctaLink)}
+                    icon={<ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />}
+                    iconPosition="right"
+                    className={`group w-full ${
                       plan.highlighted
-                        ? "bg-white text-(--color-brand-600) hover:bg-(--color-gold-50) shadow-lg hover:shadow-xl"
-                        : "bg-(--color-brand-600) dark:bg-(--color-brand-500) text-white hover:bg-(--color-brand-700) dark:hover:bg-(--color-brand-600) shadow-md hover:shadow-lg"
+                        ? "bg-white border-none text-(--color-brand-600) hover:bg-(--color-brand-50) shadow-lg hover:shadow-xl dark:bg-white dark:text-(--color-brand-600) dark:hover:bg-(--color-brand-50)"
+                        : "shadow-md hover:shadow-lg"
                     }`}
                   >
                     {plan.cta}
-                    <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
-                  </Link>
+                  </Button>
                 </div>
               </div>
             ))}

@@ -50,7 +50,7 @@ export default function Card({ title, description, image, action, variant = "def
         {action && (
           <button
             onClick={action.onClick}
-            className="group/btn mt-5 inline-flex items-center gap-2 text-xs font-bold tracking-[0.12em] uppercase text-(--color-brand-500) dark:text-(--color-gold-400) hover:text-(--color-brand-600) dark:hover:text-(--color-gold-300) transition-colors cursor-pointer"
+            className="group/btn mt-5 inline-flex items-center gap-2 text-xs font-bold tracking-[0.12em] uppercase text-(--color-brand-500) dark:text-(--color-brand-300) hover:text-(--color-brand-600) dark:hover:text-white transition-colors cursor-pointer"
           >
             <span>{action.label}</span>
             <span className="inline-block transition-all duration-300 group-hover/btn:translate-x-1.5 group-hover/btn:-translate-y-0.5">&rarr;</span>

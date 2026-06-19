@@ -50,7 +50,7 @@ export default function Testimonials() {
           {testimonials.map((t, i) => (
             <div
               key={t.name}
-              className="reveal group relative rounded-2xl widget-card p-7 hover:-translate-y-1"
+              className="reveal group relative rounded-2xl widget-card p-7 hover:-translate-y-1 flex flex-col h-full"
               style={{ transitionDelay: `${i * 0.1}s` }}
             >
               {/* Top accent bar */}
@@ -58,7 +58,7 @@ export default function Testimonials() {
 
               <Quote size={20} className="text-(--color-brand-200) dark:text-(--color-brand-700) mb-4" />
 
-              <p className="text-sm text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed">
+              <p className="text-sm text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed flex-1">
                 "{t.text}"
               </p>
 
@@ -67,7 +67,7 @@ export default function Testimonials() {
                   <Star
                     key={idx}
                     size={12}
-                    className={`${idx < t.rating ? "fill-(--color-gold-400) text-(--color-gold-400)" : "text-(--color-border) dark:text-(--color-border-dark)"}`}
+                    className={`${idx < t.rating ? "fill-amber-400 text-amber-400" : "text-(--color-border) dark:text-(--color-border-dark)"}`}
                   />
                 ))}
               </div>

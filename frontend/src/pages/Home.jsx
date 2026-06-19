@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
+import { Button } from "../components/ui"
 import Hero from "../components/Hero"
 import Platforms from "../components/Platforms"
 import StatCounter from "../components/StatCounter"
@@ -47,13 +48,13 @@ const process = [
     step: "02",
     title: "Analyze",
     desc: "AI classifies sentiment, detects themes, and scores each review.",
-    color: "bg-(--color-gold-400)",
+    color: "bg-(--color-accent-400)",
   },
   {
     step: "03",
     title: "Act",
     desc: "Get recommended responses, track trends, and improve your ratings.",
-    color: "bg-violet-400",
+    color: "bg-(--color-brand-600)",
   },
 ]
 
@@ -74,12 +75,13 @@ const benefits = [
     icon: <Globe size={22} />,
     title: "Multi-Platform Support",
     description: "One dashboard for all your review sources. No more juggling between Airbnb, Booking.com, and Google.",
-    gradient: "from-(--color-gold-400)/10 to-transparent",
+    gradient: "from-(--color-accent-400)/10 to-transparent",
   },
 ]
 
 export default function Home() {
   const containerRef = useScrollReveal()
+  const navigate = useNavigate()
 
   return (
     <div ref={containerRef}>
@@ -112,11 +114,11 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((f, i) => (
               <div
                 key={f.title}
-                className="reveal group relative rounded-2xl widget-card overflow-hidden hover:-translate-y-1"
+                className="reveal group relative rounded-2xl widget-card overflow-hidden hover:-translate-y-1 flex flex-col h-full"
                 style={{ transitionDelay: `${i * 0.1}s` }}
               >
                 {/* Top gradient accent */}
@@ -125,13 +127,13 @@ export default function Home() {
                 {/* Hover glow */}
                 <div className={`absolute inset-0 bg-gradient-to-b ${f.gradient} opacity-0 group-hover:opacity-[0.03] transition-opacity duration-500`} />
 
-                <div className="relative p-7">
+                <div className="relative p-7 flex flex-col flex-1">
                   <div className={`w-12 h-12 rounded-xl ${f.lightBg} flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3`}>
                     <span className="text-(--color-brand-600) dark:text-white">{f.icon}</span>
                   </div>
                   <h3 className="font-heading text-lg font-bold text-(--color-brand-600) dark:text-white">{f.title}</h3>
-                  <p className="mt-2.5 text-sm text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed">{f.description}</p>
-                  <div className="mt-5 inline-flex items-center gap-1.5 text-xs font-bold text-(--color-brand-500) dark:text-(--color-gold-400) group-hover:gap-2.5 transition-all cursor-pointer">
+                  <p className="mt-2.5 text-sm text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed flex-1">{f.description}</p>
+                  <div className="mt-5 inline-flex items-center gap-1.5 text-xs font-bold text-(--color-brand-500) dark:text-(--color-accent-400) group-hover:gap-2.5 transition-all cursor-pointer w-fit">
                     Learn More
                     <ChevronRight size={13} className="transition-transform group-hover:translate-x-0.5" />
                   </div>
@@ -147,9 +149,9 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-(--color-brand-600) to-(--color-brand-800) dark:from-(--color-brand-900) dark:to-black" />
         <div className="absolute inset-0 noise-overlay" />
         <div className="absolute inset-0 grid-pattern opacity-20" />
-        <div className="absolute top-0 left-1/3 w-[500px] h-[500px] rounded-full bg-(--color-gold-400)/5 blur-[120px]" />
+        <div className="absolute top-0 left-1/3 w-[500px] h-[500px] rounded-full bg-(--color-brand-500)/5 blur-[120px]" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-28">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-16">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 lg:gap-16">
             {stats.map((s) => (
               <StatCounter key={s.label} value={s.value} label={s.label} />
             ))}
@@ -178,7 +180,7 @@ export default function Home() {
                 )}
                 <div className="flex items-center gap-4 mb-4">
                   <div className={`w-14 h-14 rounded-2xl ${p.color}/10 flex items-center justify-center`}>
-                    <span className={`font-heading text-2xl font-bold bg-gradient-to-br ${p.color === "bg-(--color-brand-400)" ? "from-(--color-brand-400) to-(--color-brand-600)" : p.color === "bg-(--color-gold-400)" ? "from-(--color-gold-400) to-(--color-gold-600)" : "from-violet-400 to-violet-600"} bg-clip-text text-transparent`}>
+                    <span className={`font-heading text-2xl font-bold bg-gradient-to-br ${p.color === "bg-(--color-brand-400)" ? "from-(--color-brand-400) to-(--color-brand-600)" : p.color === "bg-(--color-accent-400)" ? "from-(--color-accent-400) to-(--color-accent-600)" : "from-(--color-brand-600) to-(--color-brand-800)"} bg-clip-text text-transparent`}>
                       {p.step}
                     </span>
                   </div>
@@ -203,20 +205,20 @@ export default function Home() {
               Built for hospitality
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {benefits.map((b, i) => (
               <div
                 key={b.title}
-                className="reveal group relative rounded-2xl widget-card p-7 overflow-hidden hover:-translate-y-0.5"
+                className="reveal group relative rounded-2xl widget-card p-7 overflow-hidden hover:-translate-y-0.5 flex flex-col h-full"
                 style={{ transitionDelay: `${i * 0.1}s` }}
               >
                 <div className={`absolute inset-0 bg-gradient-to-b ${b.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                <div className="relative">
+                <div className="relative flex flex-col flex-1">
                   <div className="p-3 rounded-xl w-fit bg-(--color-brand-50) dark:bg-(--color-brand-800) text-(--color-brand-500) dark:text-(--color-brand-300) mb-4 transition-transform duration-300 group-hover:scale-105">
                     {b.icon}
                   </div>
                   <h3 className="font-heading text-base font-bold text-(--color-brand-600) dark:text-white">{b.title}</h3>
-                  <p className="mt-2 text-sm text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed">{b.description}</p>
+                  <p className="mt-2 text-sm text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed flex-1">{b.description}</p>
                 </div>
               </div>
             ))}
@@ -231,10 +233,10 @@ export default function Home() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-(--color-brand-600) to-(--color-brand-900) dark:from-black dark:to-(--color-brand-900)" />
         <div className="absolute inset-0 noise-overlay" />
-        <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] rounded-full bg-(--color-gold-400)/5 blur-[120px] -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] rounded-full bg-(--color-brand-500)/5 blur-[120px] -translate-x-1/2 -translate-y-1/2" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 lg:py-32">
           <div className="reveal max-w-2xl mx-auto text-center">
-            <Quote size={32} className="text-(--color-gold-400)/40 mx-auto mb-6" />
+            <Quote size={32} className="text-(--color-brand-400)/40 mx-auto mb-6" />
             <h2 className="font-heading text-4xl sm:text-5xl font-bold text-white leading-tight">
               Ready to simplify<br />your reviews?
             </h2>
@@ -242,19 +244,24 @@ export default function Home() {
               Connect your properties and start understanding your guests better — in minutes, not hours.
             </p>
             <div className="mt-10 flex flex-wrap justify-center gap-3">
-              <Link
-                to="/login"
-                className="group inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-white text-(--color-brand-600) text-sm font-bold hover:bg-(--color-gold-50) transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5"
+              <Button
+                variant="custom"
+                size="lg"
+                icon={<ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />}
+                iconPosition="right"
+                onClick={() => navigate("/login")}
+                className="group bg-white text-(--color-brand-600) hover:bg-(--color-brand-50) shadow-xl hover:shadow-2xl hover:-translate-y-0.5"
               >
                 Create Free Account
-                <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </Link>
-              <Link
-                to="/pricing"
-                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl border border-white/20 text-white text-sm font-semibold hover:bg-white/10 transition-all"
+              </Button>
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => navigate("/pricing")}
+                className="border-white/20 text-white bg-transparent hover:bg-white/10 dark:bg-transparent dark:hover:bg-white/10"
               >
                 View Pricing
-              </Link>
+              </Button>
             </div>
           </div>
         </div>

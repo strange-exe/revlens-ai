@@ -8,7 +8,7 @@ const total = mockReviews.length
 
 const sentimentBars = [
   { label: "Positive", count: positive, color: "bg-(--color-brand-400)", gradient: "from-(--color-brand-400) to-(--color-brand-500)", pct: Math.round((positive / total) * 100), textColor: "text-(--color-brand-500) dark:text-(--color-brand-300)" },
-  { label: "Neutral", count: neutral, color: "bg-(--color-gold-400)", gradient: "from-(--color-gold-400) to-(--color-gold-500)", pct: Math.round((neutral / total) * 100), textColor: "text-(--color-gold-500) dark:text-(--color-gold-400)" },
+  { label: "Neutral", count: neutral, color: "bg-(--color-accent-400)", gradient: "from-(--color-accent-400) to-(--color-accent-500)", pct: Math.round((neutral / total) * 100), textColor: "text-(--color-accent-500) dark:text-(--color-accent-400)" },
   { label: "Negative", count: negative, color: "bg-red-400", gradient: "from-red-400 to-red-500", pct: Math.round((negative / total) * 100), textColor: "text-red-500 dark:text-red-400" },
 ]
 
@@ -23,12 +23,12 @@ const themes = [
 export default function Analytics() {
   return (
     <>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="font-heading text-2xl font-bold text-(--color-brand-600) dark:text-white">Analytics</h1>
           <p className="text-sm text-(--color-muted) dark:text-(--color-muted-dark) mt-1">Sentiment and rating breakdowns</p>
         </div>
-        <span className="text-xs font-semibold text-(--color-brand-600) dark:text-(--color-brand-300) bg-(--color-brand-100) dark:bg-(--color-brand-800) px-3.5 py-1.5 rounded-lg border border-(--color-brand-200) dark:border-(--color-brand-700) shadow-sm">
+        <span className="text-xs font-semibold text-(--color-brand-600) dark:text-brand-300 bg-(--color-brand-100) dark:bg-(--color-brand-800) px-3.5 py-1.5 rounded-lg border border-(--color-brand-200) dark:border-(--color-brand-700) shadow-sm w-fit">
           {total} reviews analyzed
         </span>
       </div>
@@ -65,7 +65,7 @@ export default function Analytics() {
               <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90 drop-shadow-sm">
                 <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" className="text-(--color-border) dark:text-(--color-border-dark)" />
                 <circle cx="18" cy="18" r="14" fill="none" strokeWidth="3" strokeDasharray={`${positive / total * 88} ${88 - positive / total * 88}`} strokeDashoffset="0" className="text-(--color-brand-400) transition-all duration-1000" strokeLinecap="round" />
-                <circle cx="18" cy="18" r="14" fill="none" strokeWidth="3" strokeDasharray={`${neutral / total * 88} ${88 - neutral / total * 88}`} strokeDashoffset={`${-(positive / total * 88)}`} className="text-(--color-gold-400) transition-all duration-1000" strokeLinecap="round" />
+                <circle cx="18" cy="18" r="14" fill="none" strokeWidth="3" strokeDasharray={`${neutral / total * 88} ${88 - neutral / total * 88}`} strokeDashoffset={`${-(positive / total * 88)}`} className="text-(--color-accent-400) transition-all duration-1000" strokeLinecap="round" />
                 <circle cx="18" cy="18" r="14" fill="none" strokeWidth="3" strokeDasharray={`${negative / total * 88} ${88 - negative / total * 88}`} strokeDashoffset={`${-((positive + neutral) / total * 88)}`} className="text-red-400 transition-all duration-1000" strokeLinecap="round" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -105,8 +105,8 @@ export default function Analytics() {
         {/* Rating Breakdown */}
         <div className="rounded-2xl widget-card p-6 lg:p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 rounded-xl bg-(--color-gold-100) dark:bg-(--color-gold-900)/40 shadow-sm">
-              <BarChart3 size={16} className="text-(--color-gold-600) dark:text-(--color-gold-400)" />
+            <div className="p-2 rounded-xl bg-(--color-accent-500)/10 dark:bg-(--color-accent-500)/20 shadow-sm">
+              <BarChart3 size={16} className="text-(--color-accent-600) dark:text-(--color-accent-400)" />
             </div>
             <div>
               <h2 className="font-heading text-base font-bold text-(--color-brand-600) dark:text-white">Rating Breakdown</h2>
@@ -125,7 +125,7 @@ export default function Analytics() {
                   <Star
                     key={s}
                     size={14}
-                    className={`${s <= Math.round(mockReviews.reduce((acc, r) => acc + r.rating, 0) / total) ? "fill-(--color-gold-400) text-(--color-gold-400)" : "text-(--color-border) dark:text-(--color-border-dark)"}`}
+                    className={`${s <= Math.round(mockReviews.reduce((acc, r) => acc + r.rating, 0) / total) ? "fill-amber-400 text-amber-400" : "text-(--color-border) dark:text-(--color-border-dark)"}`}
                   />
                 ))}
               </div>
@@ -142,13 +142,13 @@ export default function Analytics() {
                   <div className="flex justify-between text-xs mb-2">
                     <div className="flex items-center gap-1.5">
                       <span className="font-semibold text-(--color-brand-600) dark:text-white">{star}</span>
-                      <Star size={11} className="fill-(--color-gold-400) text-(--color-gold-400)" />
+                      <Star size={11} className="fill-amber-400 text-amber-400" />
                     </div>
                     <span className="text-(--color-muted) dark:text-(--color-muted-dark)">{count}</span>
                   </div>
                   <div className="h-2.5 rounded-full bg-(--color-border) dark:bg-(--color-border-dark) overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-(--color-gold-400) to-(--color-gold-500) transition-all duration-1000 ease-out shadow-sm"
+                      className="h-full rounded-full bg-gradient-to-r from-(--color-brand-400) to-(--color-brand-500) transition-all duration-1000 ease-out shadow-sm"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -170,14 +170,14 @@ export default function Analytics() {
             <p className="text-[10px] text-(--color-muted) dark:text-(--color-muted-dark)">AI-extracted topics from your reviews</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {themes.map((t) => (
-            <div key={t.name} className="group rounded-xl widget-card p-4 hover:-translate-y-1">
+            <div key={t.name} className="group rounded-xl widget-card p-4 hover:-translate-y-1 flex flex-col justify-between">
               <div className="flex items-center justify-between mb-2">
                 <span className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full ${
                   t.sentiment === "positive" ? "bg-(--color-brand-100) text-(--color-brand-700) dark:bg-(--color-brand-800) dark:text-(--color-brand-300) ring-1 ring-(--color-brand-300)/20 dark:ring-(--color-brand-700)/50"
                   : t.sentiment === "negative" ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 ring-1 ring-red-300/20 dark:ring-red-800/30"
-                  : "bg-(--color-gold-100) text-(--color-gold-700) dark:bg-(--color-gold-900)/40 dark:text-(--color-gold-400) ring-1 ring-(--color-gold-300)/20 dark:ring-(--color-gold-800)/30"
+                  : "bg-(--color-silver-100) text-(--color-silver-700) dark:bg-(--color-silver-800)/40 dark:text-(--color-silver-300) ring-1 ring-(--color-silver-200) dark:ring-(--color-silver-800)/50"
                 }`}>
                   {t.sentiment}
                 </span>

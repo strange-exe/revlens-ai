@@ -14,7 +14,7 @@ export default function StatCounter({ value, suffix = "", label }) {
         {remaining}
         {suffix}
       </p>
-      <div className="gold-divider mx-auto mt-4 mb-4" />
+      <div className="amethyst-divider mx-auto mt-4 mb-4" />
       <p className="text-sm text-white/60 max-w-xs mx-auto">{label}</p>
     </div>
   )

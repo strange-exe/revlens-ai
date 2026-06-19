@@ -16,11 +16,11 @@ export default function ThemeToggle() {
         className="flex items-center w-14 h-7 rounded-full transition-all duration-500 ease-in-out px-0.5"
         style={{
           background: isDark
-            ? "linear-gradient(135deg, #0f2d1c 0%, #1a3d28 100%)"
-            : "linear-gradient(135deg, #d0ecdc 0%, #a3d9bb 100%)",
+            ? "linear-gradient(135deg, #09090b 0%, #1e1b4b 100%)"
+            : "linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)",
           boxShadow: isDark
-            ? "inset 0 1px 3px rgba(0,0,0,0.5), 0 0 0 1px #2e3d35"
-            : "inset 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px #a3d9bb",
+            ? "inset 0 1px 3px rgba(0,0,0,0.5), 0 0 0 1px #312e81"
+            : "inset 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px #c4b5fd",
         }}
       >
         {/* Stars (dark mode decoration) */}
@@ -57,8 +57,8 @@ export default function ThemeToggle() {
             transform: isDark ? "translateX(28px)" : "translateX(0px)",
             transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
             background: isDark
-              ? "linear-gradient(135deg, #1a3d28 0%, #2d6a4f 100%)"
-              : "linear-gradient(135deg, #ffffff 0%, #f0faf5 100%)",
+              ? "linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%)"
+              : "linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%)",
             boxShadow: isDark
               ? "0 2px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15)"
               : "0 2px 8px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.9)",
@@ -100,7 +100,7 @@ export default function ThemeToggle() {
             }}
             aria-hidden="true"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="#6cbe93" stroke="none">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#c4b5fd" stroke="none">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
             </svg>
           </span>

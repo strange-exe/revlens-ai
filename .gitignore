@@ -158,6 +158,8 @@ Thumbs.db
 # ── AI Coding Tools ──────────────────────────────────────────
 # Claude Code local session state
 .claude/
+.codex/
+.cursor/
 
 # OpenCode session state
 .opencode/

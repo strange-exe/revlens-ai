@@ -6,48 +6,48 @@
   --font-heading: "Syne", sans-serif;
   --font-body: "Sora", sans-serif;
 
-  /* ── Brand (Emerald) ── */
-  --color-brand-50:  #f0fdf4;
-  --color-brand-100: #dcfce7;
-  --color-brand-200: #bbf7d0;
-  --color-brand-300: #86efac;
-  --color-brand-400: #4ade80;
-  --color-brand-500: #22c55e;
-  --color-brand-600: #16a34a;
-  --color-brand-700: #15803d;
-  --color-brand-800: #166534;
-  --color-brand-900: #14532d;
+  /* ── Brand (Amethyst) ── */
+  --color-brand-50:  #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
+  --color-brand-300: #c4b5fd;
+  --color-brand-400: #a78bfa;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6d28d9;
+  --color-brand-800: #5b21b6;
+  --color-brand-900: #4c1d95;
 
-  /* ── Gold (Amber) ── */
-  --color-gold-50:  #fffbeb;
-  --color-gold-100: #fef3c7;
-  --color-gold-200: #fde68a;
-  --color-gold-300: #fcd34d;
-  --color-gold-400: #fbbf24;
-  --color-gold-500: #f59e0b;
-  --color-gold-600: #d97706;
-  --color-gold-700: #b45309;
-  --color-gold-800: #92400e;
-  --color-gold-900: #78350f;
+  /* ── Silver (Cool Gray) ── */
+  --color-silver-50:  #f8fafc;
+  --color-silver-100: #f1f5f9;
+  --color-silver-200: #e2e8f0;
+  --color-silver-300: #cbd5e1;
+  --color-silver-400: #94a3b8;
+  --color-silver-500: #64748b;
+  --color-silver-600: #475569;
+  --color-silver-700: #334155;
+  --color-silver-800: #1e293b;
+  --color-silver-900: #0f172a;
 
-  /* ── Accent (Teal) ── */
-  --color-accent-400: #2dd4bf;
-  --color-accent-500: #14b8a6;
-  --color-accent-600: #0d9488;
+  /* ── Accent (Cyan) ── */
+  --color-accent-400: #22d3ee;
+  --color-accent-500: #06b6d4;
+  --color-accent-600: #0891b2;
 
   /* ── Surfaces (Light) ── */
-  --color-surface:              #f7f8f6;
+  --color-surface:              #fafafa;
   --color-surface-elevated:     #ffffff;
-  --color-surface-muted:        #eef0ec;
-  --color-border:               #d4d8d1;
-  --color-muted:                #737a6e;
+  --color-surface-muted:        #f4f4f5;
+  --color-border:               #e4e4e7;
+  --color-muted:                #71717a;
 
-  /* ── Surfaces (Dark) ── */
-  --color-surface-dark:              #080f0a;
-  --color-surface-elevated-dark:     #111a14;
-  --color-surface-muted-dark:        #0f1912;
-  --color-border-dark:               #1f3228;
-  --color-muted-dark:                #7ea88e;
+  /* ── Surfaces (Dark Obsidian) ── */
+  --color-surface-dark:              #000000;
+  --color-surface-elevated-dark:     #09090b;
+  --color-surface-muted-dark:        #18181b;
+  --color-border-dark:               rgba(255, 255, 255, 0.1);
+  --color-muted-dark:                #a1a1aa;
 }
 
 html {
@@ -65,7 +65,7 @@ html {
 }
 .dark ::selection {
   background: var(--color-brand-700);
-  color: var(--color-gold-300);
+  color: var(--color-silver-100);
 }
 
 body {
@@ -181,35 +181,37 @@ h1, h2, h3, h4, h5, h6 {
 /* ── Grid Pattern ── */
 .grid-pattern {
   background-image:
-    linear-gradient(rgba(34, 197, 94, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34, 197, 94, 0.05) 1px, transparent 1px);
+    linear-gradient(rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
   background-size: 64px 64px;
 }
 .dark .grid-pattern {
   background-image:
-    linear-gradient(rgba(74, 222, 128, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(74, 222, 128, 0.05) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
 
 /* ── Card / Widget (unified) ── */
 .widget-card {
-  background: var(--color-surface-elevated);
+  background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.03);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .widget-card:hover {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-  border-color: #c8c4bc;
+  border-color: var(--color-silver-300);
+  transform: translateY(-4px);
 }
 .dark .widget-card {
-  background: var(--color-surface-elevated-dark);
+  background: var(--color-surface-muted-dark);
   border-color: var(--color-border-dark);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 .dark .widget-card:hover {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(108, 190, 147, 0.12);
-  border-color: #3d5246;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-4px);
 }
 
 /* ── Glass (variants) ── */
@@ -220,7 +222,7 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid rgba(255, 255, 255, 0.25);
 }
 .dark .glass {
-  background: rgba(8, 11, 9, 0.55);
+  background: rgba(9, 9, 11, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -230,11 +232,21 @@ h1, h2, h3, h4, h5, h6 {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
 }
 .dark .glass-card {
-  background: rgba(27, 38, 32, 0.65);
+  background: rgba(24, 24, 27, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dark .glass-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  transform: translateY(-4px);
 }
 
 .glass-elevated {
@@ -245,26 +257,26 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.06);
 }
 .dark .glass-elevated {
-  background: rgba(27, 38, 32, 0.8);
+  background: rgba(24, 24, 27, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
 }
 
 /* ── Text Gradients ── */
 .text-gradient {
-  background: linear-gradient(135deg, var(--color-brand-600) 0%, var(--color-brand-500) 40%, var(--color-gold-500) 100%);
+  background: linear-gradient(135deg, var(--color-brand-600) 0%, var(--color-brand-400) 40%, var(--color-silver-400) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 .dark .text-gradient {
-  background: linear-gradient(135deg, var(--color-brand-400) 0%, var(--color-brand-300) 40%, var(--color-gold-400) 100%);
+  background: linear-gradient(135deg, var(--color-brand-300) 0%, var(--color-brand-500) 40%, var(--color-silver-300) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-.text-gradient-gold {
-  background: linear-gradient(135deg, var(--color-gold-400), var(--color-gold-600));
+.text-gradient-amethyst {
+  background: linear-gradient(135deg, var(--color-brand-300), var(--color-brand-500));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -275,14 +287,14 @@ h1, h2, h3, h4, h5, h6 {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-.text-gradient-green {
-  background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-400));
+.text-gradient-silver {
+  background: linear-gradient(135deg, var(--color-silver-300), var(--color-silver-500));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-.text-gradient-teal {
-  background: linear-gradient(135deg, var(--color-accent-500), var(--color-brand-400));
+.text-gradient-cyan {
+  background: linear-gradient(135deg, var(--color-accent-400), var(--color-accent-600));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -298,17 +310,17 @@ h1, h2, h3, h4, h5, h6 {
   inset: -2px;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, var(--color-brand-300), transparent, var(--color-gold-300));
+  background: linear-gradient(135deg, var(--color-brand-400), transparent, var(--color-brand-600));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
 }
 
-/* ── Golden Divider ── */
-.gold-divider {
+/* ── Amethyst Divider ── */
+.amethyst-divider {
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--color-gold-300), var(--color-gold-400), var(--color-gold-300), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-brand-400), var(--color-brand-500), var(--color-brand-400), transparent);
   width: 80px;
 }
 
@@ -322,3 +334,27 @@ h1, h2, h3, h4, h5, h6 {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ── UI Keyframes and Animations ── */
+@keyframes slide-in {
+  from {
+    transform: translateY(1rem) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
