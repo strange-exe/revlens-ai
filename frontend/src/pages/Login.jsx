@@ -1,37 +1,98 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { ArrowRight, Star, Shield, Zap, Mail, Lock } from "lucide-react"
+import { ArrowRight, Star, Shield, Zap, Mail, Lock, User, AlertCircle } from "lucide-react"
 import { Button, Input, Loader } from "../components/ui"
 import { useAuth } from "../context/AuthContext"
+import { useProperty } from "../context/PropertyContext"
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, register, googleLogin } = useAuth()
+  const { refreshData } = useProperty()
+
+  const [isSignup, setIsSignup] = useState(false)
+  const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoggingIn, setIsLoggingIn] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
 
-  const handleLoginSubmit = async (e) => {
+  // Dynamically load Google Identity Services SDK
+  useEffect(() => {
+    const script = document.createElement("script")
+    script.src = "https://accounts.google.com/gsi/client"
+    script.async = true
+    script.defer = true
+    document.head.appendChild(script)
+
+    script.onload = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+          callback: handleGoogleCallback,
+          auto_select: false,
+        })
+
+        window.google.accounts.id.renderButton(
+          document.getElementById("google-signin-btn"),
+          {
+            theme: "outline",
+            size: "large",
+            width: "384", // standard field width
+            shape: "pill",
+          }
+        )
+      }
+    }
+
+    return () => {
+      // Clean up script on unmount
+      if (document.head.contains(script)) {
+        document.head.removeChild(script)
+      }
+    }
+  }, [isSignup]) // Re-initialize button if tab changes
+
+  const handleGoogleCallback = async (response) => {
+    setIsLoggingIn(true)
+    setErrorMsg("")
+    try {
+      await googleLogin(response.credential)
+      await refreshData() // Sync property context with logged-in user
+      navigate("/dashboard")
+    } catch (err) {
+      console.error(err)
+      setErrorMsg("Google authentication failed. Please try again.")
+    } finally {
+      setIsLoggingIn(false)
+    }
+  }
+
+  const handleAuthSubmit = async (e) => {
     e.preventDefault()
     setIsLoggingIn(true)
+    setErrorMsg("")
     
-    // Simulate API delay
-    await new Promise(r => setTimeout(r, 1500))
-    
-    // Attempt login (mock logic)
-    const success = login(email, password)
-    
-    if (success) {
-      setIsLoggingIn(false)
+    try {
+      if (isSignup) {
+        await register(email, password, fullName)
+      } else {
+        await login(email, password)
+      }
+      await refreshData() // Sync property context with logged-in user
       navigate("/dashboard")
+    } catch (err) {
+      console.error(err)
+      setErrorMsg(err.message || "Authentication failed. Please verify credentials.")
+    } finally {
+      setIsLoggingIn(false)
     }
   }
 
   return (
     <div className="min-h-[calc(100dvh-4rem)] sm:min-h-[calc(100dvh-4.5rem)] flex items-stretch">
-      {/* Full screen loader simulation overlay */}
       {isLoggingIn && (
-        <Loader fullPage variant="dots" text="Loading your dashboard workspace..." />
+        <Loader fullPage variant="dots" text={isSignup ? "Creating your account..." : "Loading your dashboard workspace..."} />
       )}
 
       {/* Left: Visual Panel (hidden on mobile) */}
@@ -84,10 +145,10 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Right: Login Form */}
+      {/* Right: Authentication Form */}
       <div className="flex-1 flex items-center justify-center px-4 sm:px-8 py-16">
         <div className="w-full max-w-sm">
-          <div className="text-center mb-10">
+          <div className="text-center mb-8">
             <div className="flex justify-center mb-5">
               <svg width="52" height="52" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <defs>
@@ -106,49 +167,25 @@ export default function Login() {
                 <circle cx="26.5" cy="25.5" r="1.5" fill="#22d3ee" fillOpacity="0.7" />
               </svg>
             </div>
-            <h1 className="font-heading text-2xl font-bold text-(--color-brand-600) dark:text-white">Welcome back</h1>
-            <p className="mt-1.5 text-sm text-(--color-muted) dark:text-(--color-muted-dark)">Sign in to your dashboard</p>
+            <h1 className="font-heading text-2xl font-bold text-(--color-brand-600) dark:text-white">
+              {isSignup ? "Create an account" : "Welcome back"}
+            </h1>
+            <p className="mt-1.5 text-sm text-(--color-muted) dark:text-(--color-muted-dark)">
+              {isSignup ? "Sign up to manage your properties" : "Sign in to your dashboard"}
+            </p>
           </div>
 
-          {/* Social Login Buttons */}
-          <div className="space-y-2.5 mb-6">
-            <Button
-              variant="secondary"
-              fullWidth
-              className="py-3"
-              icon={
-                <svg width="16" height="16" viewBox="0 0 24 24">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                </svg>
-              }
-              onClick={async () => {
-                setIsLoggingIn(true)
-                await new Promise(r => setTimeout(r, 1200))
-                login("google_user@test.com", "oauth")
-                setIsLoggingIn(false)
-                navigate("/dashboard")
-              }}
-            >
-              Continue with Google
-            </Button>
-            <Button
-              variant="secondary"
-              fullWidth
-              className="py-3"
-              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.73.083-.73 1.205.085 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12 24 5.37 18.63 0 12 0z"/></svg>}
-              onClick={async () => {
-                setIsLoggingIn(true)
-                await new Promise(r => setTimeout(r, 1200))
-                login("github_user@test.com", "oauth")
-                setIsLoggingIn(false)
-                navigate("/dashboard")
-              }}
-            >
-              Continue with GitHub
-            </Button>
+          {/* Error Alert Portal */}
+          {errorMsg && (
+            <div className="flex items-start gap-2.5 bg-red-500/10 border border-red-500/20 rounded-xl p-3.5 mb-5 text-xs text-red-600 dark:text-red-400 font-medium">
+              <AlertCircle size={15} className="shrink-0 mt-0.5" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {/* Google Login Container */}
+          <div className="flex justify-center mb-6">
+            <div id="google-signin-btn" className="w-full select-none" />
           </div>
 
           {/* Divider */}
@@ -158,7 +195,18 @@ export default function Login() {
             <div className="flex-1 h-px bg-(--color-border) dark:bg-(--color-border-dark)" />
           </div>
 
-          <form className="space-y-4" onSubmit={handleLoginSubmit}>
+          <form className="space-y-4" onSubmit={handleAuthSubmit}>
+            {isSignup && (
+              <Input
+                label="Full Name"
+                type="text"
+                placeholder="e.g. John Doe"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                icon={<User size={16} />}
+                fullWidth
+              />
+            )}
             <Input
               label="Email"
               type="email"
@@ -180,32 +228,31 @@ export default function Login() {
                 fullWidth
                 required
               />
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  className="text-[10px] font-semibold text-(--color-brand-500) dark:text-(--color-brand-400) hover:underline cursor-pointer bg-transparent border-none p-0"
-                >
-                  Forgot?
-                </button>
-              </div>
             </div>
+            
             <Button
               type="submit"
               variant="primary"
               fullWidth
               icon={<ArrowRight size={15} />}
               iconPosition="right"
-              className="py-3.5 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+              className="py-3.5 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all mt-6"
             >
-              Sign In
+              {isSignup ? "Create Account" : "Sign In"}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-xs text-(--color-muted) dark:text-(--color-muted-dark)">
-            Don't have an account?{" "}
-            <Link to="/" className="font-semibold text-(--color-brand-500) dark:text-(--color-brand-400) hover:underline">
-              Get started
-            </Link>
+            {isSignup ? "Already have an account? " : "Don't have an account? "}
+            <button
+              onClick={() => {
+                setIsSignup(!isSignup)
+                setErrorMsg("")
+              }}
+              className="font-semibold text-(--color-brand-500) dark:text-(--color-brand-400) hover:underline cursor-pointer bg-transparent border-none p-0 inline-block font-sans"
+            >
+              {isSignup ? "Sign In" : "Sign Up"}
+            </button>
           </p>
 
           <p className="mt-8 text-center text-[10px] text-(--color-muted)/50 dark:text-(--color-muted-dark)/50 leading-relaxed">

@@ -1,17 +1,23 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import ReviewCard from "../components/ReviewCard"
 import { MessageSquareText, Search, Sparkles, ShieldAlert } from "lucide-react"
-import { Button, Input, Modal, Toast } from "../components/ui"
+import { Button, Input, Modal, Toast, Loader } from "../components/ui"
 import { detectSpam } from "../data/spamFilter"
 import { useProperty } from "../context/PropertyContext"
 
 export default function Reviews() {
-  const { reviews, selectedPropertyId, unflagReview, deleteReview } = useProperty()
+  const { reviews, selectedPropertyId, unflagReview, deleteReview, loading, error, updateReviewResponse } = useProperty()
   const [activeTab, setActiveTab] = useState("inbox") // "inbox" or "spam"
   const [search, setSearch] = useState("")
   const [activeReviewForReply, setActiveReviewForReply] = useState(null)
   const [draftReplyText, setDraftReplyText] = useState("")
   const [toastMessage, setToastMessage] = useState(null)
+
+  useEffect(() => {
+    if (error) {
+      setToastMessage({ text: error, type: "error" })
+    }
+  }, [error])
 
   // Filter reviews by selected property
   const propertyReviews = useMemo(() => {
@@ -66,6 +72,14 @@ export default function Reviews() {
     return filtered.filter((r) => r.sentiment === "negative" && !(detectSpam(r.text, r.guestName).isSpam && !r.isUnflagged)).length
   }, [filtered])
 
+  if (loading) {
+    return (
+      <div className="flex-grow flex items-center justify-center min-h-[60vh]">
+        <Loader size="lg" text="Loading guest feedback..." />
+      </div>
+    )
+  }
+
   const handleOpenReplyModal = (review) => {
     setActiveReviewForReply(review)
     
@@ -81,9 +95,14 @@ export default function Reviews() {
     setDraftReplyText(draft)
   }
 
-  const handleSendReply = () => {
-    navigator.clipboard.writeText(draftReplyText).catch(() => {})
-    setToastMessage(`Response draft copied and sent to ${activeReviewForReply.guestName}!`)
+  const handleSendReply = async () => {
+    try {
+      await updateReviewResponse(activeReviewForReply.id, draftReplyText)
+      navigator.clipboard.writeText(draftReplyText).catch(() => {})
+      setToastMessage({ text: `Response sent to ${activeReviewForReply.guestName} and recorded in database!`, type: "success" })
+    } catch (err) {
+      setToastMessage({ text: `Failed to save response: ${err.message || err}`, type: "error" })
+    }
     setActiveReviewForReply(null)
   }
 
@@ -93,8 +112,8 @@ export default function Reviews() {
       {toastMessage && (
         <div className="fixed bottom-5 right-5 z-50 pointer-events-none">
           <Toast
-            message={toastMessage}
-            type="success"
+            message={typeof toastMessage === "string" ? toastMessage : toastMessage.text}
+            type={typeof toastMessage === "string" ? "success" : toastMessage.type}
             onClose={() => setToastMessage(null)}
           />
         </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import ReviewCard from "../components/ReviewCard"
-import { Loader } from "../components/ui"
+import { Loader, Toast } from "../components/ui"
 import { MessageSquareText, Building2, Star, TrendingUp, ArrowUpRight, Sparkles, Hash, Activity, ShieldAlert } from "lucide-react"
 import { detectSpam } from "../data/spamFilter"
 import { useProperty } from "../context/PropertyContext"
@@ -34,15 +34,16 @@ const accentMap = {
 }
 
 export default function Dashboard() {
-  const [isLoading, setIsLoading] = useState(true)
-  const { reviews, properties, selectedPropertyId } = useProperty()
+  const { reviews, properties, selectedPropertyId, loading, error } = useProperty()
+  const [toastMessage, setToastMessage] = useState(null)
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800)
-    return () => clearTimeout(timer)
-  }, [])
+    if (error) {
+      setToastMessage(error)
+    }
+  }, [error])
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
         <Loader size="lg" text="Analyzing latest reviews..." />
@@ -101,6 +102,15 @@ export default function Dashboard() {
 
   return (
     <>
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 z-50 pointer-events-none">
+          <Toast
+            message={`Error loading dashboard: ${toastMessage}`}
+            type="error"
+            onClose={() => setToastMessage(null)}
+          />
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="font-heading text-2xl font-bold text-(--color-brand-600) dark:text-white">Overview</h1>

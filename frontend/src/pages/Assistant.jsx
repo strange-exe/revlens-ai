@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react"
-import { mockReviews } from "../data/mockReviews"
-import { Sparkles, Send, Bot, User, Trash2, ArrowDown } from "lucide-react"
-import { Button } from "../components/ui"
+import { Sparkles, Send, Bot, User, Trash2 } from "lucide-react"
+import { Button, Loader, Toast } from "../components/ui"
 import { detectSpam } from "../data/spamFilter"
+import { useProperty } from "../context/PropertyContext"
 
 const INITIAL_MESSAGES = [
   {
@@ -90,6 +90,15 @@ export default function Assistant() {
   const [isThinking, setIsThinking] = useState(false)
   const messagesEndRef = useRef(null)
   const chatContainerRef = useRef(null)
+
+  const { reviews, properties, loading, error } = useProperty()
+  const [toastMessage, setToastMessage] = useState(null)
+
+  useEffect(() => {
+    if (error) {
+      setToastMessage(error)
+    }
+  }, [error])
  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -132,68 +141,78 @@ export default function Assistant() {
   const handleClearChat = () => {
     setMessages(INITIAL_MESSAGES)
   }
- 
-  // Real-time keyword matching simulated NLP processor over mockReviews
+
+  // Real-time NLP processor over live database reviews
   const processQuery = (query) => {
     const q = query.toLowerCase()
 
     // Spam / Bot Queries
     if (q.includes("spam") || q.includes("fake") || q.includes("bot") || q.includes("suspicious")) {
-      const spamReviews = mockReviews.filter(r => detectSpam(r.text, r.guestName).isSpam)
+      const spamReviews = reviews.filter(r => r.isSpam)
       if (spamReviews.length > 0) {
         let list = spamReviews.map(r => {
           const analysis = detectSpam(r.text, r.guestName)
           return `• **${r.guestName}** at **${r.propertyName}** (Flagged: ${analysis.reason})\n  *"${r.text}"*`
         }).join("\n\n")
-        return `I scanned your feedback database and flagged **${spamReviews.length} reviews** as spam or fake bot activity:\n\n${list}\n\nI have excluded these from your overview stats and average rating. You can view, delete, or approve them in your **Reviews** dashboard.`
+        return `I scanned your database and flagged **${spamReviews.length} reviews** as spam or fake bot activity:\n\n${list}\n\nI have isolated these from your overview stats and average rating. You can view, delete, or approve them in the **Reviews** inbox.`
       }
       return "Clean scan! No suspicious reviews or fake bot accounts detected in the current dataset."
     }
 
     // 1. WiFi Queries
     if (q.includes("wifi") || q.includes("internet") || q.includes("speed")) {
-      const wifiMentions = mockReviews.filter(r => r.text.toLowerCase().includes("wifi") || r.text.toLowerCase().includes("internet"))
+      const wifiMentions = reviews.filter(r => r.text.toLowerCase().includes("wifi") || r.text.toLowerCase().includes("internet"))
       if (wifiMentions.length > 0) {
         let details = wifiMentions.map(r => `• **${r.guestName}** at **${r.propertyName}** (${r.rating}★, ${r.sentiment}): "${r.text}"`).join("\n\n")
-        return `I analyzed your review database and found **${wifiMentions.length} mention** of internet/WiFi speed:\n\n${details}\n\n**Action Item**: Consider upgrading the router or data plan at **Sunset Villa** since this directly impacted Rahul Verma's check-out score.`
+        const worstReview = wifiMentions.find(r => r.rating <= 2)
+        const targetProp = worstReview ? worstReview.propertyName : wifiMentions[0].propertyName
+        return `I analyzed your review database and found **${wifiMentions.length} mention(s)** of internet/WiFi issues:\n\n${details}\n\n**Action Item**: Consider upgrading the router or data plan at **${targetProp}** since this directly impacted guest reviews.`
       }
       return "No guest reviews currently mention WiFi or internet speed issues in the system."
     }
 
-    // 2. Mountain Retreat Queries
-    if (q.includes("mountain retreat") || q.includes("heating") || q.includes("insulation") || q.includes("arjun")) {
-      const retreatReviews = mockReviews.filter(r => r.propertyName.toLowerCase() === "mountain retreat")
+    // 2. Specific Property Query (e.g. Mountain Retreat or general property matching)
+    const matchedProp = properties.find(p => q.includes(p.name.toLowerCase()) || q.includes(p.location.toLowerCase()))
+    if (matchedProp || q.includes("mountain retreat") || q.includes("heating") || q.includes("insulation") || q.includes("arjun")) {
+      const targetPropName = matchedProp ? matchedProp.name : "Mountain Retreat"
+      const targetPropId = matchedProp ? matchedProp.id : 3
+      const retreatReviews = reviews.filter(r => r.propertyId === targetPropId || r.propertyName.toLowerCase() === targetPropName.toLowerCase())
       const complaints = retreatReviews.filter(r => r.sentiment === "negative" || r.rating <= 3)
       const positives = retreatReviews.filter(r => r.sentiment === "positive")
 
-      let reply = `Here is a summary of the feedback for **Mountain Retreat** (${retreatReviews.length} reviews total):\n\n`
+      let reply = `Here is a summary of the feedback for **${targetPropName}** (${retreatReviews.length} reviews total):\n\n`
       if (positives.length > 0) {
-        reply += `**Strengths**: Guests like **Sneha Patel** (5★) praised the bonfire setup, trekking guide arrange, and incredible mountain views.\n\n`
+        reply += `**Strengths**: Guests like **${positives[0].guestName}** (${positives[0].rating}★) praised the property: "${positives[0].text}"\n\n`
       }
       if (complaints.length > 0) {
         reply += `**Complaints**: \n`
         complaints.forEach(r => {
           reply += `• **${r.guestName}** (${r.rating}★) reported: "${r.text}"\n`
         })
-        reply += `\n**AI Recommendation**: The primary complaint centers on **heating systems** and room insulation. I suggest auditing the room heaters before guest check-in for the winter season.`
+        
+        const isHeatingComplaint = complaints.some(r => r.text.toLowerCase().includes("heat") || r.text.toLowerCase().includes("cold") || r.text.toLowerCase().includes("warm"))
+        if (isHeatingComplaint) {
+          reply += `\n**AI Recommendation**: The primary complaint centers on **heating systems** and room temperature. I suggest auditing the heaters and insulation before guest check-in for the winter season.`
+        } else {
+          reply += `\n**AI Recommendation**: Address the service/amenity issues highlighted by guest complaints above to prevent repeat low scores.`
+        }
       }
       return reply
     }
 
     // 3. Negative Reviews / Common Complaints
     if (q.includes("negative") || q.includes("complaint") || q.includes("bad") || q.includes("issue") || q.includes("critic")) {
-      // Exclude spam from negative reviews lists to keep focus on real complaints
-      const negativeReviews = mockReviews.filter(r => (r.sentiment === "negative" || r.rating <= 2) && !detectSpam(r.text, r.guestName).isSpam)
+      const negativeReviews = reviews.filter(r => (r.sentiment === "negative" || r.rating <= 2) && !r.isSpam)
       if (negativeReviews.length > 0) {
-        let list = negativeReviews.map(r => `1. **${r.propertyName}** — **${r.guestName}** (${r.rating}★): "${r.text}"`).join("\n")
-        return `Here are the active negative/critical reviews in your system:\n\n${list}\n\n**Common Themes**:\n• Heating/Insulation at Mountain Retreat.\n• Location expectations & limited breakfast options at Lakeview Cottage.`
+        let list = negativeReviews.map((r, index) => `${index + 1}. **${r.propertyName}** — **${r.guestName}** (${r.rating}★): "${r.text}"`).join("\n")
+        return `Here are the active negative/critical reviews in your system:\n\n${list}\n\n**Common Themes**:\n• Heating/Insulation at Mountain Retreat.\n• Location and expectations at Lakeview Cottage.`
       }
       return "Excellent! There are no negative reviews (rating 2★ or below) registered in the active dataset."
     }
 
     // 4. Cleanliness Queries
     if (q.includes("clean") || q.includes("dirty") || q.includes("hygiene")) {
-      const cleanMentions = mockReviews.filter(r => r.text.toLowerCase().includes("clean"))
+      const cleanMentions = reviews.filter(r => r.text.toLowerCase().includes("clean") || r.text.toLowerCase().includes("spotless"))
       if (cleanMentions.length > 0) {
         let details = cleanMentions.map(r => `• **${r.guestName}** (${r.propertyName}): "${r.text}"`).join("\n")
         return `Cleanliness is a major strength for your properties! I found **${cleanMentions.length} reviews** praising it:\n\n${details}\n\nThere are no hygiene complaints detected.`
@@ -203,28 +222,29 @@ export default function Assistant() {
 
     // 5. Sentiment breakdown
     if (q.includes("sentiment") || q.includes("breakdown") || q.includes("stat") || q.includes("distribution")) {
-      // Exclude spam reviews from metrics calculations
-      const validReviews = mockReviews.filter(r => !detectSpam(r.text, r.guestName).isSpam)
+      const validReviews = reviews.filter(r => !r.isSpam)
       const positiveCount = validReviews.filter(r => r.sentiment === "positive").length
       const neutralCount = validReviews.filter(r => r.sentiment === "neutral").length
       const negativeCount = validReviews.filter(r => r.sentiment === "negative").length
-      const total = validReviews.length
+      const totalReviews = validReviews.length
 
-      const positivePct = Math.round((positiveCount / total) * 100)
-      const neutralPct = Math.round((neutralCount / total) * 100)
-      const negativePct = Math.round((negativeCount / total) * 100)
+      const positivePct = totalReviews > 0 ? Math.round((positiveCount / totalReviews) * 100) : 0
+      const neutralPct = totalReviews > 0 ? Math.round((neutralCount / totalReviews) * 100) : 0
+      const negativePct = totalReviews > 0 ? Math.round((negativeCount / totalReviews) * 100) : 0
 
-      return `Here is your current **Sentiment Breakdown** across all properties:\n\n*   **Positive**: ${positivePct}% (${positiveCount} reviews)\n*   **Neutral**: ${neutralPct}% (${neutralCount} reviews)\n*   **Negative**: ${negativePct}% (${negativeCount} reviews)\n\nYour average rating is **${(validReviews.reduce((acc, r) => acc + r.rating, 0) / total).toFixed(1)}★**. You have a solid reputation, but addressing heating at Mountain Retreat could boost your ratings past 4.2★.`
+      const avg = totalReviews > 0
+        ? (validReviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1)
+        : "0.0"
+
+      return `Here is your current **Sentiment Breakdown** across all properties:\n\n*   **Positive**: ${positivePct}% (${positiveCount} reviews)\n*   **Neutral**: ${neutralPct}% (${neutralCount} reviews)\n*   **Negative**: ${negativePct}% (${negativeCount} reviews)\n\nYour average rating is **${avg}★** based on ${totalReviews} real reviews. Keeping heating issues resolved at Mountain Retreat can further optimize your ratings.`
     }
 
     // 6. Response Drafts / Writing Replies
     if (q.includes("draft") || q.includes("write") || q.includes("reply") || q.includes("response")) {
       // Find guest if mentioned
-      const matchedReview = mockReviews.find(r => q.includes(r.guestName.toLowerCase()) || q.includes(r.guestName.split(" ")[0].toLowerCase()))
+      const matchedReview = reviews.find(r => q.includes(r.guestName.toLowerCase()) || q.includes(r.guestName.split(" ")[0].toLowerCase()))
       if (matchedReview) {
-        // Warning block for spam
-        const isSpam = detectSpam(matchedReview.text, matchedReview.guestName).isSpam
-        if (isSpam) {
+        if (matchedReview.isSpam) {
           return `⚠️ **Spam Alert**: The review from **${matchedReview.guestName}** has been flagged as suspicious bot activity. I recommend **deleting** this review on the Reviews dashboard rather than replying to it.`
         }
 
@@ -244,9 +264,28 @@ export default function Assistant() {
     // Fallback
     return "I'm not quite sure how to analyze that query. Try asking me one of these options:\n\n*   *\"Show me our spam reviews.\"*\n*   *\"What is the main complaint about Mountain Retreat?\"*\n*   *\"Summarize our WiFi issues.\"*\n*   *\"Show a breakdown of our sentiment.\"*"
   }
- 
+
+  if (loading) {
+    return (
+      <div className="flex-grow flex items-center justify-center min-h-[60vh]">
+        <Loader size="lg" text="Connecting to AI assistant..." />
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[450px]">
+      {/* Toast Alert Portal */}
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 z-50 pointer-events-none">
+          <Toast
+            message={`Error connecting to database: ${toastMessage}`}
+            type="error"
+            onClose={() => setToastMessage(null)}
+          />
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6 shrink-0">
         <div>
@@ -305,7 +344,7 @@ export default function Assistant() {
               </div>
             )
           })}
-
+ 
           {isThinking && (
             <div className="flex gap-3 mr-auto max-w-[85%]">
               <div className="w-8 h-8 rounded-xl bg-(--color-accent-500)/10 border border-(--color-accent-500)/20 text-(--color-accent-500) shrink-0 flex items-center justify-center shadow-sm">
@@ -320,24 +359,24 @@ export default function Assistant() {
           )}
           <div ref={messagesEndRef} />
         </div>
-
+ 
         {/* Action input panel */}
         <div className="p-4 border-t border-(--color-border)/60 dark:border-(--color-border-dark)/60 bg-(--color-surface-muted)/30 dark:bg-(--color-surface-muted-dark)/20 relative z-10 shrink-0">
-          {/* Quick chips - only show if there are only initial/welcome messages to keep screen tidy, or always collapse to top */}
+          {/* Quick chips */}
           {messages.length <= 2 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {SUGGESTED_PROMPTS.map((p) => (
                 <button
-                  key={p}
-                  onClick={() => handleSend(p)}
-                  className="px-3 py-1.5 text-[11px] font-semibold rounded-xl bg-white dark:bg-(--color-surface-elevated-dark) border border-(--color-border) dark:border-(--color-border-dark) text-(--color-brand-600) dark:text-(--color-brand-300) hover:border-(--color-brand-400) dark:hover:border-(--color-brand-500) hover:bg-(--color-brand-50)/50 dark:hover:bg-(--color-brand-900)/10 transition-all cursor-pointer shadow-sm active:scale-95"
+                   key={p}
+                   onClick={() => handleSend(p)}
+                   className="px-3 py-1.5 text-[11px] font-semibold rounded-xl bg-white dark:bg-(--color-surface-elevated-dark) border border-(--color-border) dark:border-(--color-border-dark) text-(--color-brand-600) dark:text-(--color-brand-300) hover:border-(--color-brand-400) dark:hover:border-(--color-brand-500) hover:bg-(--color-brand-50)/50 dark:hover:bg-(--color-brand-900)/10 transition-all cursor-pointer shadow-sm active:scale-95"
                 >
                   {p}
                 </button>
               ))}
             </div>
           )}
-
+ 
           <form
             onSubmit={(e) => {
               e.preventDefault()

@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useProperty } from "../context/PropertyContext"
 import { useNavigate } from "react-router-dom"
 import Modal from "../components/ui/Modal"
-import { Select } from "../components/ui"
+import { Select, Loader, Toast } from "../components/ui"
 
 import { 
   Building, 
@@ -26,7 +26,9 @@ export default function Properties() {
     nearbyProperties, 
     selectedPropertyId, 
     setSelectedPropertyId,
-    reviews 
+    reviews,
+    loading,
+    error
   } = useProperty()
   
   const navigate = useNavigate()
@@ -41,11 +43,18 @@ export default function Properties() {
   const [newPropLocation, setNewPropLocation] = useState("")
   const [newPropPrice, setNewPropPrice] = useState("5000")
   const [addSuccess, setAddSuccess] = useState(false)
+  const [toastMessage, setToastMessage] = useState(null)
 
   // Comparison State
   const [compareMode, setCompareMode] = useState(false)
   const [compareProp1, setCompareProp1] = useState(null)
   const [compareProp2, setCompareProp2] = useState(null)
+
+  useEffect(() => {
+    if (error) {
+      setToastMessage({ text: error, type: "error" })
+    }
+  }, [error])
 
   // Calculate dynamic stats for user's own properties based on actual reviews
   const myPropertiesWithStats = useMemo(() => {
@@ -53,12 +62,13 @@ export default function Properties() {
     const basePrices = {
       1: "₹7,500/night",
       2: "₹6,000/night",
-      3: "₹5,200/night"
+      3: "₹5,200/night",
+      4: "₹4,500/night"
     }
 
     return properties.map(p => {
       // Filter out spam reviews from rating calculation
-      const propReviews = reviews.filter(r => r.propertyId === p.id && !r.isSpam && !r.isUnflagged === false)
+      const propReviews = reviews.filter(r => r.propertyId === p.id && !r.isSpam)
       const reviewsCount = propReviews.length
       const avgRating = reviewsCount > 0 
         ? parseFloat((propReviews.reduce((sum, r) => sum + r.rating, 0) / reviewsCount).toFixed(1))
@@ -111,31 +121,54 @@ export default function Properties() {
   const mineCount = useMemo(() => myPropertiesWithStats.length, [myPropertiesWithStats])
   const nearbyCount = useMemo(() => nearbyProperties.length, [nearbyProperties])
 
-  const handleAddProperty = (e) => {
+  const handleAddProperty = async (e) => {
     e.preventDefault()
     if (!newPropName || !newPropLocation) return
 
-    addProperty({
-      name: newPropName,
-      location: newPropLocation
-    })
+    try {
+      await addProperty({
+        name: newPropName,
+        location: newPropLocation,
+        price: `₹${parseInt(newPropPrice).toLocaleString('en-IN')}/night`
+      })
 
-    setAddSuccess(true)
-    setNewPropName("")
-    setNewPropLocation("")
-    
-    setTimeout(() => {
-      setAddSuccess(false)
-      setShowAddForm(false)
-    }, 2000)
+      setAddSuccess(true)
+      setNewPropName("")
+      setNewPropLocation("")
+      setToastMessage({ text: `Successfully registered ${newPropName}!`, type: "success" })
+      
+      setTimeout(() => {
+        setAddSuccess(false)
+        setShowAddForm(false)
+      }, 2000)
+    } catch (err) {
+      setToastMessage({ text: `Failed to register property: ${err.message || err}`, type: "error" })
+    }
   }
 
   const handleSelectProperty = (id) => {
     setSelectedPropertyId(id)
   }
 
+  if (loading) {
+    return (
+      <div className="flex-grow flex items-center justify-center min-h-[60vh]">
+        <Loader size="lg" text="Loading property listings..." />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 animate-slide-up-sm">
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 z-50 pointer-events-none">
+          <Toast
+            message={toastMessage.text}
+            type={toastMessage.type}
+            onClose={() => setToastMessage(null)}
+          />
+        </div>
+      )}
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

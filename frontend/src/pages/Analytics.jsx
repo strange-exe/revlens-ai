@@ -1,28 +1,108 @@
-import { mockReviews } from "../data/mockReviews"
+import { useMemo, useState, useEffect } from "react"
+import { useProperty } from "../context/PropertyContext"
 import { BarChart3, PieChart, TrendingUp, AlertCircle, Star } from "lucide-react"
-
-const positive = mockReviews.filter((r) => r.sentiment === "positive").length
-const neutral = mockReviews.filter((r) => r.sentiment === "neutral").length
-const negative = mockReviews.filter((r) => r.sentiment === "negative").length
-const total = mockReviews.length
-
-const sentimentBars = [
-  { label: "Positive", count: positive, color: "bg-(--color-brand-400)", gradient: "from-(--color-brand-400) to-(--color-brand-500)", pct: Math.round((positive / total) * 100), textColor: "text-(--color-brand-500) dark:text-(--color-brand-300)" },
-  { label: "Neutral", count: neutral, color: "bg-(--color-accent-400)", gradient: "from-(--color-accent-400) to-(--color-accent-500)", pct: Math.round((neutral / total) * 100), textColor: "text-(--color-accent-500) dark:text-(--color-accent-400)" },
-  { label: "Negative", count: negative, color: "bg-red-400", gradient: "from-red-400 to-red-500", pct: Math.round((negative / total) * 100), textColor: "text-red-500 dark:text-red-400" },
-]
-
-const themes = [
-  { name: "Cleanliness", mentions: 7, sentiment: "positive" },
-  { name: "Location", mentions: 6, sentiment: "positive" },
-  { name: "WiFi Speed", mentions: 4, sentiment: "negative" },
-  { name: "Staff Friendliness", mentions: 5, sentiment: "positive" },
-  { name: "Value for Money", mentions: 3, sentiment: "neutral" },
-]
+import { Loader, Toast } from "../components/ui"
+import { detectSpam } from "../data/spamFilter"
 
 export default function Analytics() {
+  const { reviews, selectedPropertyId, loading, error } = useProperty()
+  const [toastMessage, setToastMessage] = useState(null)
+
+  useEffect(() => {
+    if (error) {
+      setToastMessage(error)
+    }
+  }, [error])
+
+  // Filter reviews by selected property and exclude spam
+  const filteredReviews = useMemo(() => {
+    const propReviews = selectedPropertyId === "all"
+      ? reviews
+      : reviews.filter((r) => r.propertyId === parseInt(selectedPropertyId))
+    
+    // Exclude spam reviews from analytics calculations
+    return propReviews.filter((r) => !detectSpam(r.text, r.guestName).isSpam)
+  }, [reviews, selectedPropertyId])
+
+  // Dynamic calculations
+  const total = filteredReviews.length
+  const positive = filteredReviews.filter((r) => r.sentiment === "positive").length
+  const neutral = filteredReviews.filter((r) => r.sentiment === "neutral").length
+  const negative = filteredReviews.filter((r) => r.sentiment === "negative").length
+
+  const avgRating = useMemo(() => {
+    if (total === 0) return "0.0"
+    return (filteredReviews.reduce((sum, r) => sum + r.rating, 0) / total).toFixed(1)
+  }, [filteredReviews, total])
+
+  const sentimentBars = useMemo(() => {
+    if (total === 0) {
+      return [
+        { label: "Positive", count: 0, color: "bg-(--color-brand-400)", gradient: "from-(--color-brand-400) to-(--color-brand-500)", pct: 0, textColor: "text-(--color-brand-500) dark:text-(--color-brand-300)" },
+        { label: "Neutral", count: 0, color: "bg-(--color-accent-400)", gradient: "from-(--color-accent-400) to-(--color-accent-500)", pct: 0, textColor: "text-(--color-accent-500) dark:text-(--color-accent-400)" },
+        { label: "Negative", count: 0, color: "bg-red-400", gradient: "from-red-400 to-red-500", pct: 0, textColor: "text-red-500 dark:text-red-400" },
+      ]
+    }
+    return [
+      { label: "Positive", count: positive, color: "bg-(--color-brand-400)", gradient: "from-(--color-brand-400) to-(--color-brand-500)", pct: Math.round((positive / total) * 100), textColor: "text-(--color-brand-500) dark:text-(--color-brand-300)" },
+      { label: "Neutral", count: neutral, color: "bg-(--color-accent-400)", gradient: "from-(--color-accent-400) to-(--color-accent-500)", pct: Math.round((neutral / total) * 100), textColor: "text-(--color-accent-500) dark:text-(--color-accent-400)" },
+      { label: "Negative", count: negative, color: "bg-red-400", gradient: "from-red-400 to-red-500", pct: Math.round((negative / total) * 100), textColor: "text-red-500 dark:text-red-400" },
+    ]
+  }, [positive, neutral, negative, total])
+
+  // Extract themes dynamically based on actual reviews
+  const themes = useMemo(() => {
+    const baseThemes = [
+      { name: "Cleanliness", mentions: 0, sentiment: "positive" },
+      { name: "Location", mentions: 0, sentiment: "positive" },
+      { name: "WiFi Speed", mentions: 0, sentiment: "negative" },
+      { name: "Staff Friendliness", mentions: 0, sentiment: "positive" },
+      { name: "Value for Money", mentions: 0, sentiment: "neutral" },
+    ]
+
+    filteredReviews.forEach((r) => {
+      const text = r.text.toLowerCase()
+      if (text.includes("clean") || text.includes("spotless") || text.includes("tidy")) {
+        baseThemes[0].mentions++
+      }
+      if (text.includes("location") || text.includes("view") || text.includes("scenery") || text.includes("beach") || text.includes("lake")) {
+        baseThemes[1].mentions++
+      }
+      if (text.includes("wifi") || text.includes("internet") || text.includes("speed") || text.includes("connection")) {
+        baseThemes[2].mentions++
+      }
+      if (text.includes("staff") || text.includes("host") || text.includes("helper") || text.includes("service")) {
+        baseThemes[3].mentions++
+      }
+      if (text.includes("value") || text.includes("price") || text.includes("worth") || text.includes("expensive") || text.includes("overpriced")) {
+        baseThemes[4].mentions++
+      }
+    })
+
+    return baseThemes
+  }, [filteredReviews])
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[60vh]">
+        <Loader size="lg" text="Aggregating property metrics..." />
+      </div>
+    )
+  }
+
   return (
     <>
+      {/* Toast Alert Portal */}
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 z-50 pointer-events-none">
+          <Toast
+            message={`Error loading analytics: ${toastMessage}`}
+            type="error"
+            onClose={() => setToastMessage(null)}
+          />
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="font-heading text-2xl font-bold text-(--color-brand-600) dark:text-white">Analytics</h1>
@@ -64,9 +144,13 @@ export default function Analytics() {
             <div className="relative w-28 h-28 shrink-0">
               <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90 drop-shadow-sm">
                 <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" className="text-(--color-border) dark:text-(--color-border-dark)" />
-                <circle cx="18" cy="18" r="14" fill="none" strokeWidth="3" strokeDasharray={`${positive / total * 88} ${88 - positive / total * 88}`} strokeDashoffset="0" className="text-(--color-brand-400) transition-all duration-1000" strokeLinecap="round" />
-                <circle cx="18" cy="18" r="14" fill="none" strokeWidth="3" strokeDasharray={`${neutral / total * 88} ${88 - neutral / total * 88}`} strokeDashoffset={`${-(positive / total * 88)}`} className="text-(--color-accent-400) transition-all duration-1000" strokeLinecap="round" />
-                <circle cx="18" cy="18" r="14" fill="none" strokeWidth="3" strokeDasharray={`${negative / total * 88} ${88 - negative / total * 88}`} strokeDashoffset={`${-((positive + neutral) / total * 88)}`} className="text-red-400 transition-all duration-1000" strokeLinecap="round" />
+                {total > 0 && (
+                  <>
+                    <circle cx="18" cy="18" r="14" fill="none" strokeWidth="3" strokeDasharray={`${(positive / total) * 88} ${88 - (positive / total) * 88}`} strokeDashoffset="0" className="text-(--color-brand-400) transition-all duration-1000" strokeLinecap="round" />
+                    <circle cx="18" cy="18" r="14" fill="none" strokeWidth="3" strokeDasharray={`${(neutral / total) * 88} ${88 - (neutral / total) * 88}`} strokeDashoffset={`${-((positive / total) * 88)}`} className="text-(--color-accent-400) transition-all duration-1000" strokeLinecap="round" />
+                    <circle cx="18" cy="18" r="14" fill="none" strokeWidth="3" strokeDasharray={`${(negative / total) * 88} ${88 - (negative / total) * 88}`} strokeDashoffset={`${-(((positive + neutral) / total) * 88)}`} className="text-red-400 transition-all duration-1000" strokeLinecap="round" />
+                  </>
+                )}
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="font-heading text-xl font-bold text-(--color-brand-600) dark:text-white">{total}</span>
@@ -116,16 +200,16 @@ export default function Analytics() {
 
           <div className="flex items-center gap-5 mb-6 p-4 rounded-xl bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark) border border-(--color-border) dark:border-(--color-border-dark)">
             <span className="font-heading text-4xl font-bold text-(--color-brand-600) dark:text-white">
-              {(mockReviews.reduce((s, r) => s + r.rating, 0) / total).toFixed(1)}
+              {avgRating}
             </span>
             <div className="h-10 w-px bg-(--color-border) dark:bg-(--color-border-dark)" />
             <div>
               <div className="flex items-center gap-0.5">
-                {[1,2,3,4,5].map(s => (
+                {[1, 2, 3, 4, 5].map(s => (
                   <Star
                     key={s}
                     size={14}
-                    className={`${s <= Math.round(mockReviews.reduce((acc, r) => acc + r.rating, 0) / total) ? "fill-amber-400 text-amber-400" : "text-(--color-border) dark:text-(--color-border-dark)"}`}
+                    className={`${s <= Math.round(parseFloat(avgRating)) ? "fill-amber-400 text-amber-400" : "text-(--color-border) dark:text-(--color-border-dark)"}`}
                   />
                 ))}
               </div>
@@ -135,8 +219,8 @@ export default function Analytics() {
 
           <div className="space-y-4">
             {[5, 4, 3, 2, 1].map((star) => {
-              const count = mockReviews.filter((r) => r.rating === star).length
-              const pct = Math.round((count / total) * 100)
+              const count = filteredReviews.filter((r) => r.rating === star).length
+              const pct = total > 0 ? Math.round((count / total) * 100) : 0
               return (
                 <div key={star}>
                   <div className="flex justify-between text-xs mb-2">
@@ -181,7 +265,7 @@ export default function Analytics() {
                 }`}>
                   {t.sentiment}
                 </span>
-                {t.sentiment === "negative" && <AlertCircle size={12} className="text-red-400" />}
+                {t.sentiment === "negative" && t.mentions > 0 && <AlertCircle size={12} className="text-red-400 animate-pulse-soft" />}
               </div>
               <p className="font-heading text-sm font-bold text-(--color-brand-600) dark:text-white">{t.name}</p>
               <p className="text-[10px] text-(--color-muted) dark:text-(--color-muted-dark) mt-0.5">{t.mentions} mentions</p>

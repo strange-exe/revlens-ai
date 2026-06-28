@@ -1,9 +1,10 @@
-import { createContext, useContext, useState, useMemo } from "react"
-import { properties as initialProperties, mockReviews as initialReviews } from "../data/mockReviews"
+import { createContext, useContext, useState, useMemo, useEffect } from "react"
+import { api } from "../services/api"
+import { useAuth } from "./AuthContext"
 
 const PropertyContext = createContext()
 
-// Seed data for competitor / nearby properties
+// Seed data for competitor / nearby properties - static UI decoration
 const INITIAL_NEARBY_PROPERTIES = [
   { id: 101, name: "Sea Breeze Residency", location: "Goa", rating: 4.2, price: "₹4,500/night", reviewsCount: 124, distance: "1.2 km away" },
   { id: 102, name: "Ocean Crest Villa", location: "Goa", rating: 4.7, price: "₹8,000/night", reviewsCount: 310, distance: "0.8 km away" },
@@ -18,28 +19,88 @@ const INITIAL_NEARBY_PROPERTIES = [
 ]
 
 export function PropertyProvider({ children }) {
-  const [properties, setProperties] = useState(initialProperties)
+  const { user } = useAuth()
+  const [properties, setProperties] = useState([])
   const [selectedPropertyId, setSelectedPropertyId] = useState("all")
   const [nearbyProperties] = useState(INITIAL_NEARBY_PROPERTIES)
-  const [reviews, setReviews] = useState(initialReviews)
+  const [reviews, setReviews] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const addProperty = (newProp) => {
-    const freshProp = {
-      id: properties.length + 1,
-      name: newProp.name,
-      location: newProp.location,
+  // Fetch properties and reviews on mount
+  const refreshData = async () => {
+    try {
+      setLoading(true)
+      const [fetchedProperties, fetchedReviews] = await Promise.all([
+        api.getProperties(),
+        api.getReviews(),
+      ])
+      setProperties(fetchedProperties)
+      setReviews(fetchedReviews)
+      setError(null)
+    } catch (err) {
+      console.error("Failed to fetch data from backend:", err)
+      setError(err.message || "Failed to connect to backend server")
+    } finally {
+      setLoading(false)
     }
-    setProperties((prev) => [...prev, freshProp])
   }
 
-  const unflagReview = (id) => {
-    setReviews((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, isUnflagged: true } : r))
-    )
+  useEffect(() => {
+    if (user) {
+      refreshData()
+    } else {
+      setProperties([])
+      setReviews([])
+      setLoading(false)
+    }
+  }, [user])
+
+  const addProperty = async (newProp) => {
+    try {
+      const created = await api.createProperty(newProp)
+      setProperties((prev) => [...prev, created])
+      return created
+    } catch (err) {
+      console.error("Failed to add property:", err)
+      throw err
+    }
   }
 
-  const deleteReview = (id) => {
-    setReviews((prev) => prev.filter((r) => r.id !== id))
+  const unflagReview = async (id) => {
+    try {
+      const updated = await api.flagReview(id, { isSpam: false, isUnflagged: true })
+      setReviews((prev) =>
+        prev.map((r) => (r.id === id ? updated : r))
+      )
+      return updated
+    } catch (err) {
+      console.error("Failed to unflag review:", err)
+      throw err
+    }
+  }
+
+  const deleteReview = async (id) => {
+    try {
+      await api.deleteReview(id)
+      setReviews((prev) => prev.filter((r) => r.id !== id))
+    } catch (err) {
+      console.error("Failed to delete review:", err)
+      throw err
+    }
+  }
+
+  const updateReviewResponse = async (id, responseText) => {
+    try {
+      const updated = await api.updateReview(id, { response: responseText })
+      setReviews((prev) =>
+        prev.map((r) => (r.id === id ? updated : r))
+      )
+      return updated
+    } catch (err) {
+      console.error("Failed to update review response:", err)
+      throw err
+    }
   }
 
   const value = useMemo(
@@ -52,8 +113,12 @@ export function PropertyProvider({ children }) {
       reviews,
       unflagReview,
       deleteReview,
+      updateReviewResponse,
+      loading,
+      error,
+      refreshData
     }),
-    [properties, selectedPropertyId, nearbyProperties, reviews]
+    [properties, selectedPropertyId, nearbyProperties, reviews, loading, error]
   )
 
   return (

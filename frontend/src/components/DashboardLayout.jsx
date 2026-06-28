@@ -10,7 +10,7 @@ import { Select } from "./ui"
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { properties, selectedPropertyId, setSelectedPropertyId } = useProperty()
-  const { logout } = useAuth()
+  const { user, logout } = useAuth()
 
   return (
     <div className="flex min-h-screen bg-(--color-surface) dark:bg-(--color-surface-dark) transition-colors duration-300">
@@ -48,6 +48,24 @@ export default function DashboardLayout() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {user && (
+              <div className="flex items-center gap-2 mr-2">
+                {user.picture ? (
+                  <img
+                    src={user.picture}
+                    alt={user.fullName || "User avatar"}
+                    className="w-7 h-7 rounded-full object-cover ring-2 ring-(--color-brand-400)/30"
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-(--color-brand-100) dark:bg-(--color-brand-800) flex items-center justify-center text-xs font-bold text-(--color-brand-600) dark:text-(--color-brand-300) ring-2 ring-(--color-brand-400)/30">
+                    {(user.fullName || user.email || "?").charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="hidden lg:inline text-xs font-semibold text-(--color-brand-600) dark:text-white">
+                  {user.fullName || user.email.split("@")[0]}
+                </span>
+              </div>
+            )}
             <Link
               to="/"
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-(--color-muted) dark:text-(--color-muted-dark) hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
