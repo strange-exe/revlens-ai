@@ -5,7 +5,7 @@
  * component code (r.propertyId, r.guestName, etc.) keeps working unchanged.
  */
 
-const BASE = '/api'
+const BASE = import.meta.env.VITE_API_URL || '/api'
 
 async function request(path, options = {}) {
   const token = localStorage.getItem("revlens_token")
