@@ -24,9 +24,9 @@ const values = [
 const timeline = [
   { phase: "Week 1", title: "Project Planning & Repository Setup", status: "done" },
   { phase: "Week 2", title: "Frontend Skeleton & UI Components", status: "done" },
-  { phase: "Week 3", title: "Backend API & Database Setup", status: "current" },
-  { phase: "Week 4", title: "AI Integration with Gemini API", status: "upcoming" },
-  { phase: "Week 5", title: "Dashboard Analytics & Charts", status: "upcoming" },
+  { phase: "Week 3", title: "Backend API & Database Setup", status: "done" },
+  { phase: "Week 4", title: "AI Integration with Gemini API", status: "done" },
+  { phase: "Week 5", title: "Dashboard Analytics & Charts", status: "current" },
   { phase: "Week 6", title: "Testing, Polish & Production", status: "upcoming" },
 ]
 

@@ -211,13 +211,13 @@ export default function Pricing() {
                   </ul>
 
                   <Button
-                    variant={plan.highlighted ? "secondary" : "primary"}
+                    variant={plan.highlighted ? "custom" : "primary"}
                     onClick={() => navigate(plan.ctaLink)}
                     icon={<ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />}
                     iconPosition="right"
                     className={`group w-full ${
                       plan.highlighted
-                        ? "bg-white border-none text-(--color-brand-600) hover:bg-(--color-brand-50) shadow-lg hover:shadow-xl dark:bg-white dark:text-(--color-brand-600) dark:hover:bg-(--color-brand-50)"
+                        ? "bg-white border-none text-brand-600 hover:bg-brand-50 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                         : "shadow-md hover:shadow-lg"
                     }`}
                   >

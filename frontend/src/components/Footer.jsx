@@ -75,7 +75,7 @@ export default function Footer() {
           <div>
             <h4 className="text-[11px] font-bold tracking-[0.15em] uppercase text-(--color-muted) dark:text-(--color-muted-dark) mb-4">Stack</h4>
             <div className="space-y-1.5 text-sm text-(--color-muted) dark:text-(--color-muted-dark)">
-              {["React + Vite", "Tailwind CSS", "Cloudflare Workers", "Cloudflare D1", "Gemini AI"].map((s) => (
+              {["React + Vite", "Tailwind CSS", "Cloudflare Pages","Render", "Cloudflare D1", "Gemini AI"].map((s) => (
                 <p key={s}>{s}</p>
               ))}
             </div>
