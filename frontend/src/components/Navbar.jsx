@@ -119,6 +119,7 @@ export default function Navbar() {
         <div className="md:hidden flex items-center gap-2">
           <ThemeToggle />
           <button
+            type="button"
             onClick={() => setOpen(!open)}
             className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-(--color-muted) dark:text-(--color-muted-dark)"
             aria-expanded={open}

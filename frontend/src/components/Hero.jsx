@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom"
-import { Button } from "./ui"
+import Button from "./ui/Button"
 import { Star, TrendingUp, MessageSquareText, BarChart3 } from "lucide-react"
 import Platforms from "./Platforms"
 
@@ -44,7 +44,7 @@ export default function Hero({ title, titleLines, subtitle, ctaText, ctaLink }) 
             <h1 className="animate-slide-up font-heading text-5xl sm:text-7xl lg:text-8xl font-bold tracking-tighter leading-[0.9] text-(--color-brand-600) dark:text-white">
               {Array.isArray(titleLines)
                 ? titleLines.map((line, i) => (
-                    <span key={i}>
+                    <span key={line}>
                       {line}
                       {i < titleLines.length - 1 && <br />}
                     </span>

@@ -1,0 +1,5 @@
+GitHub : https://github.com/strange-exe/revlens-ai/
+
+Frontend : https://revlens.abhinesh.me/ 
+
+Backend : https://revlens-backend.onrender.com/

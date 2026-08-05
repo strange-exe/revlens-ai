@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react"
 import { Sparkles, Send, Bot, User, Trash2 } from "lucide-react"
-import { Button, Loader, Toast } from "../components/ui"
+import Button from "../components/ui/Button"
+import Loader from "../components/ui/Loader"
+import Toast from "../components/ui/Toast"
 import { detectSpam } from "../data/spamFilter"
 import { useProperty } from "../context/PropertyContext"
 
@@ -351,9 +353,9 @@ export default function Assistant() {
                 <Bot size={14} />
               </div>
               <div className="bg-(--color-surface-muted)/40 dark:bg-(--color-surface-muted-dark)/50 border border-(--color-border) dark:border-(--color-border-dark)/60 px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-(--color-accent-400) animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-(--color-accent-400) animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-(--color-accent-400) animate-bounce" />
+                <span className="w-1.5 h-1.5 rounded-full bg-(--color-accent-400) animate-smooth-bob [animation-delay:-0.3s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-(--color-accent-400) animate-smooth-bob [animation-delay:-0.15s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-(--color-accent-400) animate-smooth-bob" />
               </div>
             </div>
           )}
@@ -368,8 +370,9 @@ export default function Assistant() {
               {SUGGESTED_PROMPTS.map((p) => (
                 <button
                    key={p}
+                   type="button"
                    onClick={() => handleSend(p)}
-                   className="px-3 py-1.5 text-[11px] font-semibold rounded-xl bg-white dark:bg-(--color-surface-elevated-dark) border border-(--color-border) dark:border-(--color-border-dark) text-(--color-brand-600) dark:text-(--color-brand-300) hover:border-(--color-brand-400) dark:hover:border-(--color-brand-500) hover:bg-(--color-brand-50)/50 dark:hover:bg-(--color-brand-900)/10 transition-all cursor-pointer shadow-sm active:scale-95"
+                   className="px-3 py-1.5 text-[11px] font-semibold rounded-xl bg-white dark:bg-(--color-surface-elevated-dark) border border-(--color-border) dark:border-(--color-border-dark) text-(--color-brand-600) dark:text-brand-300 hover:border-(--color-brand-400) dark:hover:border-(--color-brand-500) hover:bg-(--color-brand-50)/50 dark:hover:bg-(--color-brand-900)/10 transition-all cursor-pointer shadow-sm active:scale-95"
                 >
                   {p}
                 </button>
@@ -386,6 +389,7 @@ export default function Assistant() {
           >
             <input
               type="text"
+              aria-label="Ask a question to Assistant"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Ask about properties, WiFi issues, negative reviews, or draft a response..."

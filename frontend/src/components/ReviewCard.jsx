@@ -1,5 +1,5 @@
 import { Star, Sparkles, ShieldAlert, Check, Trash2 } from "lucide-react"
-import { Button } from "./ui"
+import Button from "./ui/Button"
 import { detectSpam } from "../data/spamFilter"
 
 const sentimentStyles = {

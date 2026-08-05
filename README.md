@@ -1,147 +1,225 @@
 # RevLens AI
 
-    AI-powered review intelligence platform for homestay owners.
+> AI-powered review intelligence platform empowering homestay owners to analyze guest reviews, track sentiment, automate responses, and extract actionable business insights.
 
-## Overview
+---
 
-    RevLens AI helps homestay owners analyze guest reviews, classify sentiment, identify recurring themes, and generate actionable insights through AI-powered analytics and visual dashboards.
+## 🔗 Live Links & Demo
 
-    The platform centralizes feedback from multiple review sources and transforms unstructured reviews into meaningful business intelligence. Using Google's Gemini API, RevLens AI can automatically classify sentiment, detect key themes, suggest professional responses, and visualize trends through an interactive analytics dashboard.
+- **Live Application URL**: [https://revlens.abhinesh.me](https://revlens.abhinesh.me)
+- **Live Backend API**: [https://revlens-backend.onrender.com/](https://revlens-backend.onrender.com/)
+- **Interactive API Documentation (Swagger)**: [https://revlens-backend.onrender.com/docs](https://revlens-backend.onrender.com/docs)
+---
 
-## Features
+## 🖼️ Screenshots
 
-* Review sentiment analysis
-* Theme detection
-* AI-generated management responses
-* Analytics dashboard
-* Review trend tracking
-* Bulk review processing
+![Login Page](screenshots/1_login.png)
+*Figure 1: User Login & JWT Authentication Interface*
 
-## Tech Stack
+![Dashboard & Reviews](screenshots/2_read.png)
+*Figure 2: Real-time Analytics Dashboard & Guest Review Feed*
+
+![AI Response Generation](screenshots/ai_reply_verification.png)
+*Figure 3: AI-Generated Guest Management Response powered by Google Gemini API*
+
+![Create Property & Review](screenshots/3_create.png)
+*Figure 4: Property Registration & Review Submission Flow*
+
+---
+
+## ✨ Features
+
+- **Guest Review Sentiment Analysis**: Automatically classifies incoming reviews into `positive`, `neutral`, or `negative` categories using Google Gemini AI.
+- **Spam & Abuse Detection**: Audits review text for promotional links, repetitive spam patterns, or malicious content.
+- **AI-Powered Response Assistant**: Generates warm, professional, on-brand host replies in seconds with customizable tone rules.
+- **Property & Review Management (Full CRUD)**: Register homestay properties, add guest reviews, edit existing records, and flag/delete reviews.
+- **Analytics & Trend Visualizations**: Real-time breakdown of average ratings, sentiment distributions, and review volume across properties.
+- **JWT & OAuth Authentication**: Secure user registration, password hashing with bcrypt, and JWT token protection.
+- **Search & Filtering**: Search reviews by guest name, property, or text keywords with real-time dynamic filtering.
+
+---
+
+## 🛠️ Tech Stack
 
 ### Frontend
-
-* React.js (Vite)
-* Tailwind CSS
+- **Framework**: React 18 (Vite)
+- **Styling**: Tailwind CSS
+- **Icons & UI Components**: Lucide React
+- **State Management & Data Fetching**: React Context API & Axios
 
 ### Backend
+- **Framework**: FastAPI (Python 3.12)
+- **ORM & Database Drivers**: SQLAlchemy & psycopg2-binary
+- **Authentication**: PyJWT & Passlib (bcrypt)
+- **API Documentation**: OpenAPI / Swagger UI
 
-* FastAPI
+### Database & AI Services
+- **Database**: PostgreSQL hosted on **Supabase**
+- **AI Model Integration**: Google Gemini API (`gemini-1.5-flash`) via HTTP REST requests with local fallback heuristics
 
-### Database
-
-* Supabase
-
-### AI Integration
-
-* Google Gemini API
-
-### Authentication
-
-* JWT Authentication
-
-### Deployment
-
-* Cloudflare Pages
-* Railway
-
-## Setup
-
-### Backend API Setup
-
-This is the backend REST API for RevLens AI, built using FastAPI
-
-## Features
-- **FastAPI Framework**: High performance, easy routing, automatic OpenAPI (Swagger) documentation.
-- **SQLAlchemy ORM**: Flexible database query building with PostgreSQL or SQLite.
-- **Seeding on Startup**: Auto-creates database tables and seeds them with mock reviews and properties on first launch.
-- **Error Handling Middleware**: Catch-all global middleware returning formatted JSON responses for 404, 400, and 500 errors.
+### Hosting & Deployment
+- **Frontend Hosting**: Vercel
+- **Backend Hosting**: Render (Web Service)
+- **CI/CD**: GitHub Actions
 
 ---
 
-## How to Run Backend Locally
+## 📐 Architecture & Folder Structure
 
-### Prerequisites
-- Python 3.10 or higher
-- pip (Python package installer)
+```
+revlens-ai/
+├── backend/                  # FastAPI REST API Backend
+│   ├── app/
+│   │   ├── ai.py             # Gemini AI integration & fallback prompt logic
+│   │   ├── auth.py           # JWT token generation & password hashing
+│   │   ├── crud.py           # SQLAlchemy database queries & CRUD operations
+│   │   ├── database.py       # Supabase PostgreSQL database engine setup
+│   │   ├── main.py           # FastAPI entrypoint, routes, & CORS middleware
+│   │   ├── models.py         # SQLAlchemy ORM database models
+│   │   └── schemas.py        # Pydantic data validation schemas
+│   ├── requirements.txt      # Python backend dependencies
+│   └── main.py               # Root app loader
+├── frontend/                 # React (Vite) Frontend Application
+│   ├── src/
+│   │   ├── components/       # Reusable UI components (Navbar, Cards, Modals, Loader)
+│   │   ├── context/          # Auth & Property Context Providers
+│   │   ├── pages/            # Application routes (Dashboard, Properties, Reviews, Assistant)
+│   │   ├── services/         # API client & HTTP request handlers
+│   │   ├── App.jsx           # Main React router & layout wrapper
+│   │   └── main.jsx          # Vite entrypoint
+│   └── package.json          # Frontend dependencies & scripts
+├── docs/                     # Project briefs & architectural documentation
+├── screenshots/              # Application screenshots for documentation & submission
+├── PROMPTS.md                # Prompt engineering log & iteration analysis
+└── README.md                 # Complete project capstone documentation
+```
 
-### Setup Instructions
+### Entity Relationship Diagram (ERD)
 
-1. **Navigate to the Backend Directory**:
-   ```bash
-   cd backend
-   ```
-
-2. **Create and Activate a Virtual Environment**:
-   - **Windows (PowerShell)**:
-     ```powershell
-     python -m venv venv
-     .\venv\Scripts\Activate.ps1
-     ```
-   - **macOS/Linux**:
-     ```bash
-     python3 -m venv venv
-     source venv/bin/activate
-     ```
-
-3. **Install Dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure Environment Variables**:
-   Copy `.env.example` to `.env`:
-   - **Windows**:
-     ```powershell
-     copy .env.example .env
-     ```
-   - **macOS/Linux**:
-     ```bash
-     cp .env.example .env
-     ```
-   Open `.env` and fill in your custom configurations, including your `GEMINI_API_KEY` for AI features.
-
-5. **Run the Development Server**:
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
-   The backend API will start running at `http://localhost:8000`.
-
-6. **Access Interactive API Docs**:
-   - Swagger UI: `http://localhost:8000/docs`
-   - ReDoc: `http://localhost:8000/redoc`
+```mermaid
+erDiagram
+    users {
+        int id PK
+        string email UNIQUE
+        string hashed_password
+        string full_name
+        string google_id UNIQUE
+        string picture
+    }
+    properties {
+        int id PK
+        string name
+        string location
+        string price
+        string distance
+        float rating
+        int reviews_count
+        boolean is_user_property
+        int user_id FK
+    }
+    reviews {
+        int id PK
+        int property_id FK
+        string property_name
+        string guest_name
+        int rating
+        string text
+        string date
+        string sentiment
+        string source
+        boolean is_spam
+        boolean is_unflagged
+        string response
+    }
+    users ||--o{ properties : "owns"
+    properties ||--o{ reviews : "has"
+```
 
 ---
 
-## API Endpoints Summary
+## ⚡ Quick Start & Setup Instructions
 
-### Properties Endpoints
-- `GET /api/properties`: List all registered properties.
-- `POST /api/properties`: Register a new property.
+### 1. Prerequisites
+- Python 3.10+
+- Node.js 18+ & npm
+- Free Supabase PostgreSQL instance
+- Google Gemini API Key ([AI Studio](https://aistudio.google.com/))
 
-### Reviews Endpoints
-- `GET /api/reviews`: Get all reviews (supports optional filter queries `property_id` and `sentiment`).
-- `GET /api/reviews/{review_id}`: Get details of a single review.
-- `POST /api/reviews`: Create a new guest review.
-- `PUT /api/reviews/{review_id}`: Update review details.
-- `PATCH /api/reviews/{review_id}/flag`: Toggle spam/unflag state.
-- `DELETE /api/reviews/{review_id}`: Delete a review.
+### 2. Backend Setup
+```bash
+# Navigate to backend folder
+cd backend
 
-### Additional Endpoints
-- `GET /api/reviews/search`: Search reviews text, guest names, or property names by query parameter `q`.
-- `GET /api/reviews/sentiment-summary`: Aggregated counts of positive, neutral, and negative reviews.
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: .\venv\Scripts\Activate.ps1
 
-### Frontend Setup
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-   The application will load at `http://localhost:5173`.
+# Install requirements
+pip install -r requirements.txt
+
+# Configure environment variables
+cp .env.example .env
+```
+
+Edit `backend/.env`:
+```env
+DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT-ID].supabase.co:5432/postgres
+JWT_SECRET=your_super_secret_jwt_key_here
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+GEMINI_API_KEY=your_google_gemini_api_key_here
+```
+
+Start the FastAPI backend:
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+Backend API will run at `http://localhost:8000`. Access Swagger docs at `http://localhost:8000/docs`.
+
+### 3. Frontend Setup
+```bash
+# Navigate to frontend folder
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+Frontend will load at `http://localhost:5173`.
+
+---
+
+## 📋 API Endpoints Documentation
+
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | Register a new homestay host account | No |
+| `POST` | `/api/auth/login` | Obtain JWT access token via email & password | No |
+| `POST` | `/api/auth/google` | Authenticate via Google OAuth ID token | No |
+| `GET` | `/api/auth/me` | Fetch authenticated host profile | Yes |
+| `GET` | `/api/properties` | Fetch registered properties | Yes |
+| `POST` | `/api/properties` | Create a new property | Yes |
+| `GET` | `/api/reviews` | List guest reviews (filterable by property & sentiment) | Yes |
+| `GET` | `/api/reviews/search` | Search review text, guest names, or properties | Yes |
+| `POST` | `/api/reviews` | Submit a new guest review | Yes |
+| `POST` | `/api/reviews/{id}/generate-reply` | Generate AI host response via Gemini API | Yes |
+| `PUT` | `/api/reviews/{id}` | Update review content | Yes |
+| `PATCH` | `/api/reviews/{id}/flag` | Flag or unflag review as spam | Yes |
+| `DELETE` | `/api/reviews/{id}` | Delete a review | Yes |
+| `GET` | `/api/reviews/sentiment-summary` | Aggregated positive/neutral/negative counts | Yes |
+
+---
+
+## ⚠️ Known Limitations & Deployment Notes
+
+- **Render Free Tier Cold Start**: The backend hosted on Render's free web service spins down after 15 minutes of inactivity. Initial requests after idle may take 30–50 seconds to wake up the server.
+- **Gemini API Quota**: Free tier Gemini API rate limits permit up to 15 requests per minute. If exceeded, RevLens AI automatically falls back to built-in rule-based sentiment and mock response engines to ensure uninterrupted service.
+
+---
+
+## Credits & Acknowledgements
+
+- **Google Gemini API** for generative text capabilities and review sentiment modeling.
+- **Supabase** for managed PostgreSQL cloud hosting.
+- **TBI GEU Internship Program (SIP26)** for curriculum modules, technical mentorship, and evaluation guidelines.

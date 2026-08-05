@@ -1,21 +1,59 @@
-import { useState, useEffect } from "react"
+import React, { useReducer, useEffect } from "react"
+import { useEffectEvent } from "../hooks/useEffectEvent"
 import { Link, useNavigate } from "react-router-dom"
 import { ArrowRight, Star, Shield, Zap, Mail, Lock, User, AlertCircle } from "lucide-react"
-import { Button, Input, Loader } from "../components/ui"
+import Button from "../components/ui/Button"
+import Input from "../components/ui/Input"
+import Loader from "../components/ui/Loader"
 import { useAuth } from "../context/AuthContext"
 import { useProperty } from "../context/PropertyContext"
+
+const initialState = {
+  isSignup: false,
+  fullName: "",
+  email: "",
+  password: "",
+  isLoggingIn: false,
+  errorMsg: "",
+}
+
+function loginReducer(state, action) {
+  switch (action.type) {
+    case "SET_FIELD":
+      return { ...state, [action.field]: action.value }
+    case "TOGGLE_SIGNUP":
+      return { ...state, isSignup: !state.isSignup, errorMsg: "" }
+    case "START_AUTH":
+      return { ...state, isLoggingIn: true, errorMsg: "" }
+    case "AUTH_SUCCESS":
+      return { ...state, isLoggingIn: false }
+    case "AUTH_ERROR":
+      return { ...state, isLoggingIn: false, errorMsg: action.payload }
+    default:
+      return state
+  }
+}
 
 export default function Login() {
   const navigate = useNavigate()
   const { login, register, googleLogin } = useAuth()
   const { refreshData } = useProperty()
 
-  const [isSignup, setIsSignup] = useState(false)
-  const [fullName, setFullName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [isLoggingIn, setIsLoggingIn] = useState(false)
-  const [errorMsg, setErrorMsg] = useState("")
+  const [state, dispatch] = useReducer(loginReducer, initialState)
+  const { isSignup, fullName, email, password, isLoggingIn, errorMsg } = state
+
+  const onGoogleCallback = useEffectEvent(async (response) => {
+    dispatch({ type: "START_AUTH" })
+    try {
+      await googleLogin(response.credential)
+      await refreshData() // Sync property context with logged-in user
+      dispatch({ type: "AUTH_SUCCESS" })
+      navigate("/dashboard")
+    } catch (err) {
+      console.error(err)
+      dispatch({ type: "AUTH_ERROR", payload: "Google authentication failed. Please try again." })
+    }
+  })
 
   // Dynamically load Google Identity Services SDK
   useEffect(() => {
@@ -29,7 +67,7 @@ export default function Login() {
       if (window.google) {
         window.google.accounts.id.initialize({
           client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
-          callback: handleGoogleCallback,
+          callback: onGoogleCallback,
           auto_select: false,
         })
 
@@ -53,25 +91,9 @@ export default function Login() {
     }
   }, [isSignup]) // Re-initialize button if tab changes
 
-  const handleGoogleCallback = async (response) => {
-    setIsLoggingIn(true)
-    setErrorMsg("")
-    try {
-      await googleLogin(response.credential)
-      await refreshData() // Sync property context with logged-in user
-      navigate("/dashboard")
-    } catch (err) {
-      console.error(err)
-      setErrorMsg("Google authentication failed. Please try again.")
-    } finally {
-      setIsLoggingIn(false)
-    }
-  }
-
   const handleAuthSubmit = async (e) => {
     e.preventDefault()
-    setIsLoggingIn(true)
-    setErrorMsg("")
+    dispatch({ type: "START_AUTH" })
     
     try {
       if (isSignup) {
@@ -80,12 +102,11 @@ export default function Login() {
         await login(email, password)
       }
       await refreshData() // Sync property context with logged-in user
+      dispatch({ type: "AUTH_SUCCESS" })
       navigate("/dashboard")
     } catch (err) {
       console.error(err)
-      setErrorMsg(err.message || "Authentication failed. Please verify credentials.")
-    } finally {
-      setIsLoggingIn(false)
+      dispatch({ type: "AUTH_ERROR", payload: err.message || "Authentication failed. Please verify credentials." })
     }
   }
 
@@ -202,7 +223,7 @@ export default function Login() {
                 type="text"
                 placeholder="e.g. John Doe"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "fullName", value: e.target.value })}
                 icon={<User size={16} />}
                 fullWidth
               />
@@ -212,7 +233,7 @@ export default function Login() {
               type="email"
               placeholder="you@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => dispatch({ type: "SET_FIELD", field: "email", value: e.target.value })}
               icon={<Mail size={16} />}
               fullWidth
               required
@@ -223,7 +244,7 @@ export default function Login() {
                 type="password"
                 placeholder="Enter your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "password", value: e.target.value })}
                 icon={<Lock size={16} />}
                 fullWidth
                 required
@@ -245,10 +266,8 @@ export default function Login() {
           <p className="mt-6 text-center text-xs text-(--color-muted) dark:text-(--color-muted-dark)">
             {isSignup ? "Already have an account? " : "Don't have an account? "}
             <button
-              onClick={() => {
-                setIsSignup(!isSignup)
-                setErrorMsg("")
-              }}
+              type="button"
+              onClick={() => dispatch({ type: "TOGGLE_SIGNUP" })}
               className="font-semibold text-(--color-brand-500) dark:text-(--color-brand-400) hover:underline cursor-pointer bg-transparent border-none p-0 inline-block font-sans"
             >
               {isSignup ? "Sign In" : "Sign Up"}

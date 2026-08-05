@@ -5,7 +5,7 @@ import ThemeToggle from "./ThemeToggle"
 import { Menu, Home as HomeIcon, LogOut } from "lucide-react"
 import { useProperty } from "../context/PropertyContext"
 import { useAuth } from "../context/AuthContext"
-import { Select } from "./ui"
+import Select from "./ui/Select"
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -17,8 +17,10 @@ export default function DashboardLayout() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} logout={logout} />
       
       {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/50 md:hidden backdrop-blur-sm"
+        <button 
+          type="button"
+          aria-label="Close sidebar"
+          className="fixed inset-0 z-40 bg-black/50 md:hidden backdrop-blur-sm cursor-pointer border-none"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -27,6 +29,8 @@ export default function DashboardLayout() {
         <header className="h-14 border-b border-(--color-border)/60 dark:border-(--color-border-dark)/60 flex items-center justify-between px-4 sm:px-6 bg-(--color-surface-elevated)/80 dark:bg-(--color-surface-elevated-dark)/80 backdrop-blur-xl shadow-sm dark:shadow-black/5 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button 
+              type="button"
+              aria-label="Open sidebar menu"
               onClick={() => setSidebarOpen(true)}
               className="md:hidden p-2 -ml-2 rounded-lg hover:bg-(--color-brand-50) dark:hover:bg-(--color-brand-800) text-(--color-muted) dark:text-(--color-muted-dark) cursor-pointer"
             >
@@ -82,6 +86,7 @@ export default function DashboardLayout() {
               Source
             </a>
             <button
+              type="button"
               onClick={logout}
               className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 dark:border-red-500/30 hover:bg-red-500/20 transition-all cursor-pointer"
             >

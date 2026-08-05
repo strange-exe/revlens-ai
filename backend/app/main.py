@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 import logging
 import requests
 
-from . import models, schemas, crud, auth
+from . import models, schemas, crud, auth, ai
 from .database import engine, get_db
 
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +20,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "https://revlens.abhinesh.me"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -191,7 +191,37 @@ def create_review(
     prop = db.query(models.Property).filter(models.Property.id == review.property_id).first()
     if prop and prop.user_id and prop.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to add reviews to this property")
+    
+    # Auto-classify sentiment and spam if not already specified
+    if not review.sentiment or review.sentiment == "neutral":
+        sentiment, is_spam = ai.analyze_review_sentiment_and_spam(review.text, review.guest_name)
+        review.sentiment = sentiment
+        review.is_spam = is_spam
+
     return crud.create_review(db, review)
+
+
+@app.post("/api/reviews/{review_id}/generate-reply", status_code=200)
+def generate_review_reply(
+    review_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    review = crud.get_review(db, review_id)
+    if not review:
+        raise HTTPException(status_code=404, detail=f"Review {review_id} not found")
+        
+    prop = db.query(models.Property).filter(models.Property.id == review.property_id).first()
+    if prop and prop.user_id and prop.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to generate replies for this review")
+        
+    reply = ai.generate_management_response(
+        guest_name=review.guest_name,
+        property_name=review.property_name,
+        rating=review.rating,
+        text=review.text
+    )
+    return {"reply": reply}
 
 
 @app.put("/api/reviews/{review_id}", response_model=schemas.ReviewOut, status_code=200)

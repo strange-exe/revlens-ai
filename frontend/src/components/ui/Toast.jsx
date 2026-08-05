@@ -1,5 +1,33 @@
 import React, { useEffect } from "react"
+import { useEffectEvent } from "../../hooks/useEffectEvent"
 import { CheckCircle, AlertCircle, Info, X } from "lucide-react"
+
+const types = {
+  success: {
+    border: "border-emerald-500",
+    bg: "bg-emerald-50 dark:bg-emerald-950/20",
+    text: "text-emerald-800 dark:text-emerald-300",
+    icon: <CheckCircle size={18} className="text-emerald-500 shrink-0" />,
+  },
+  error: {
+    border: "border-red-500",
+    bg: "bg-red-50 dark:bg-red-950/20",
+    text: "text-red-800 dark:text-red-300",
+    icon: <AlertCircle size={18} className="text-red-500 shrink-0" />,
+  },
+  info: {
+    border: "border-sky-500",
+    bg: "bg-sky-50 dark:bg-sky-950/20",
+    text: "text-sky-800 dark:text-sky-300",
+    icon: <Info size={18} className="text-sky-500 shrink-0" />,
+  },
+  warning: {
+    border: "border-amber-500",
+    bg: "bg-amber-50 dark:bg-amber-950/20",
+    text: "text-amber-800 dark:text-amber-300",
+    icon: <AlertCircle size={18} className="text-amber-500 shrink-0" />,
+  },
+}
 
 /**
  * @typedef {Object} ToastProps
@@ -19,40 +47,17 @@ export default function Toast({
   onClose,
   duration = 3000,
 }) {
+  const onToastClose = useEffectEvent(() => {
+    if (onClose) onClose()
+  })
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (onClose) onClose()
+      onToastClose()
     }, duration)
 
     return () => clearTimeout(timer)
-  }, [duration, onClose])
-
-  const types = {
-    success: {
-      border: "border-emerald-500",
-      bg: "bg-emerald-50 dark:bg-emerald-950/20",
-      text: "text-emerald-800 dark:text-emerald-300",
-      icon: <CheckCircle size={18} className="text-emerald-500 shrink-0" />,
-    },
-    error: {
-      border: "border-red-500",
-      bg: "bg-red-50 dark:bg-red-950/20",
-      text: "text-red-800 dark:text-red-300",
-      icon: <AlertCircle size={18} className="text-red-500 shrink-0" />,
-    },
-    info: {
-      border: "border-sky-500",
-      bg: "bg-sky-50 dark:bg-sky-950/20",
-      text: "text-sky-800 dark:text-sky-300",
-      icon: <Info size={18} className="text-sky-500 shrink-0" />,
-    },
-    warning: {
-      border: "border-amber-500",
-      bg: "bg-amber-50 dark:bg-amber-950/20",
-      text: "text-amber-800 dark:text-amber-300",
-      icon: <AlertCircle size={18} className="text-amber-500 shrink-0" />,
-    },
-  }
+  }, [duration])
 
   const current = types[type] || types.success
 
@@ -70,6 +75,7 @@ export default function Toast({
       </span>
 
       <button
+        type="button"
         onClick={onClose}
         className="p-0.5 rounded-lg text-current hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
         aria-label="Dismiss toast"

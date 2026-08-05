@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom"
-import { Button } from "../components/ui"
+import Button from "../components/ui/Button"
 import Hero from "../components/Hero"
 import StatCounter from "../components/StatCounter"
 import Testimonials from "../components/Testimonials"

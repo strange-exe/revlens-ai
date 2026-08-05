@@ -1,5 +1,13 @@
 import React, { useEffect } from "react"
+import { useEffectEvent } from "../../hooks/useEffectEvent"
 import { X } from "lucide-react"
+
+const sizeMap = {
+  sm: "max-w-md",
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+  xl: "max-w-4xl",
+}
 
 /**
  * @typedef {Object} ModalProps
@@ -23,6 +31,10 @@ export default function Modal({
   footer,
   size = "md",
 }) {
+  const onModalClose = useEffectEvent(() => {
+    if (onClose) onClose()
+  })
+
   // Lock body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -35,29 +47,37 @@ export default function Modal({
     }
   }, [isOpen])
 
+  // Escape key handler to close modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onModalClose()
+      }
+    }
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown)
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
 
-  const sizeMap = {
-    sm: "max-w-md",
-    md: "max-w-lg",
-    lg: "max-w-2xl",
-    xl: "max-w-4xl",
-  }
-
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose()
-    }
-  }
-
   return (
-    <div
-      onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-300"
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Sibling Backdrop button for accessibility */}
+      <button
+        type="button"
+        aria-label="Close modal"
+        onClick={onClose}
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-300 border-none cursor-pointer w-full h-full"
+      />
+
+      {/* Dialog container */}
       <div
         className={`
-          w-full ${sizeMap[size]} rounded-2xl bg-white dark:bg-(--color-surface-elevated-dark) border border-(--color-border) dark:border-(--color-border-dark) shadow-2xl overflow-hidden transform transition-all duration-300 scale-100 animate-[in_0.2s_ease-out]
+          relative z-10 w-full ${sizeMap[size]} rounded-2xl bg-white dark:bg-(--color-surface-elevated-dark) border border-(--color-border) dark:border-(--color-border-dark) shadow-2xl overflow-hidden transform transition-all duration-300 scale-100 animate-[in_0.2s_ease-out]
         `}
       >
         {/* Modal Header */}
@@ -70,6 +90,7 @@ export default function Modal({
             <div />
           )}
           <button
+            type="button"
             onClick={onClose}
             className="p-1 rounded-lg text-(--color-muted) dark:text-(--color-muted-dark) hover:bg-(--color-surface-muted) dark:hover:bg-(--color-surface-muted-dark) transition-colors cursor-pointer"
             aria-label="Close modal"

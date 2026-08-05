@@ -12,8 +12,11 @@ const getApiBase = () => {
 }
 const BASE = getApiBase()
 
+const TOKEN_KEY = "revlens_token:v1"
+const USER_KEY = "revlens_user:v1"
+
 async function request(path, options = {}) {
-  const token = localStorage.getItem("revlens_token")
+  const token = localStorage.getItem(TOKEN_KEY)
   const headers = { 
     'Content-Type': 'application/json', 
     ...options.headers 
@@ -30,8 +33,8 @@ async function request(path, options = {}) {
   if (!res.ok) {
     // If unauthorized, clear local session so user is redirected by ProtectedRoute
     if (res.status === 401 && !path.startsWith("/auth") && window.location.pathname !== "/login") {
-      localStorage.removeItem("revlens_token")
-      localStorage.removeItem("revlens_user")
+      localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem(USER_KEY)
       window.location.href = "/login"
     }
     const err = await res.json().catch(() => ({ detail: res.statusText }))
@@ -179,6 +182,13 @@ export const api = {
       body: JSON.stringify(body),
     })
     return normalizeReview(data)
+  },
+
+  async generateReply(id) {
+    const data = await request(`/reviews/${id}/generate-reply`, {
+      method: 'POST',
+    })
+    return data.reply
   },
 
   async updateReview(id, updates) {

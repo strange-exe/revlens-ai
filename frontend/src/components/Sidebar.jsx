@@ -39,6 +39,8 @@ export default function Sidebar({ isOpen, onClose, logout }) {
           </span>
         </div>
         <button 
+          type="button"
+          aria-label="Close sidebar menu"
           onClick={onClose}
           className="md:hidden p-2 -mr-2 text-(--color-muted) hover:text-(--color-brand-500) dark:text-(--color-muted-dark) dark:hover:text-white rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
         >
@@ -76,6 +78,7 @@ export default function Sidebar({ isOpen, onClose, logout }) {
           Go to Home
         </Link>
         <button
+          type="button"
           onClick={() => {
             onClose && onClose()
             logout && logout()

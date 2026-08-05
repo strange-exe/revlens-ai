@@ -5,6 +5,7 @@ export default function ThemeToggle() {
 
   return (
     <button
+      type="button"
       onClick={toggleTheme}
       role="switch"
       aria-checked={isDark}
@@ -16,11 +17,11 @@ export default function ThemeToggle() {
         className="flex items-center w-14 h-7 rounded-full transition-all duration-500 ease-in-out px-0.5"
         style={{
           background: isDark
-            ? "linear-gradient(135deg, #09090b 0%, #1e1b4b 100%)"
-            : "linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)",
+            ? "linear-gradient(135deg, var(--color-surface-dark) 0%, var(--color-surface-muted-dark) 100%)"
+            : "linear-gradient(135deg, var(--color-brand-100) 0%, var(--color-brand-200) 100%)",
           boxShadow: isDark
-            ? "inset 0 1px 3px rgba(0,0,0,0.5), 0 0 0 1px #312e81"
-            : "inset 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px #c4b5fd",
+            ? "inset 0 1px 3px rgba(0,0,0,0.5), 0 0 0 1px var(--color-border-dark)"
+            : "inset 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px var(--color-brand-300)",
         }}
       >
         {/* Stars (dark mode decoration) */}
@@ -55,10 +56,10 @@ export default function ThemeToggle() {
           className="relative flex items-center justify-center w-6 h-6 rounded-full shadow-md transition-all duration-500"
           style={{
             transform: isDark ? "translateX(28px)" : "translateX(0px)",
-            transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+            transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
             background: isDark
-              ? "linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%)"
-              : "linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%)",
+              ? "linear-gradient(135deg, var(--color-brand-500) 0%, var(--color-brand-700) 100%)"
+              : "linear-gradient(135deg, #ffffff 0%, var(--color-brand-50) 100%)",
             boxShadow: isDark
               ? "0 2px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15)"
               : "0 2px 8px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.9)",

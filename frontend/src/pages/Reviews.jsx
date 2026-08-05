@@ -1,21 +1,31 @@
-import { useState, useMemo, useEffect } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import ReviewCard from "../components/ReviewCard"
 import { MessageSquareText, Search, Sparkles, ShieldAlert } from "lucide-react"
-import { Button, Input, Modal, Toast, Loader } from "../components/ui"
+import Button from "../components/ui/Button"
+import Input from "../components/ui/Input"
+import Modal from "../components/ui/Modal"
+import Toast from "../components/ui/Toast"
+import Loader from "../components/ui/Loader"
 import { detectSpam } from "../data/spamFilter"
 import { useProperty } from "../context/PropertyContext"
 
 export default function Reviews() {
-  const { reviews, selectedPropertyId, unflagReview, deleteReview, loading, error, updateReviewResponse } = useProperty()
-  const [activeTab, setActiveTab] = useState("inbox") // "inbox" or "spam"
-  const [search, setSearch] = useState("")
-  const [activeReviewForReply, setActiveReviewForReply] = useState(null)
-  const [draftReplyText, setDraftReplyText] = useState("")
-  const [toastMessage, setToastMessage] = useState(null)
+  const { reviews, selectedPropertyId, unflagReview, deleteReview, loading, error, updateReviewResponse, generateReply } = useProperty()
+
+  const [viewState, setViewState] = useState({
+    activeTab: "inbox", // "inbox" or "spam"
+    search: "",
+    activeReviewForReply: null,
+    draftReplyText: "",
+    isGeneratingReply: false,
+    toastMessage: null
+  })
+
+  const { activeTab, search, activeReviewForReply, draftReplyText, isGeneratingReply, toastMessage } = viewState
 
   useEffect(() => {
     if (error) {
-      setToastMessage({ text: error, type: "error" })
+      setViewState(prev => ({ ...prev, toastMessage: { text: error, type: "error" } }))
     }
   }, [error])
 
@@ -29,12 +39,12 @@ export default function Reviews() {
   // Handlers for spam interactions
   const handleUnflag = (id) => {
     unflagReview(id)
-    setToastMessage("Review marked as valid and moved to Inbox.")
+    setViewState(prev => ({ ...prev, toastMessage: "Review marked as valid and moved to Inbox." }))
   }
 
   const handleDelete = (id) => {
     deleteReview(id)
-    setToastMessage("Flagged review deleted successfully.")
+    setViewState(prev => ({ ...prev, toastMessage: "Flagged review deleted successfully." }))
   }
 
   // Calculate dynamic stats
@@ -80,30 +90,63 @@ export default function Reviews() {
     )
   }
 
-  const handleOpenReplyModal = (review) => {
-    setActiveReviewForReply(review)
-    
-    // Generate a contextual mock response draft based on sentiment
-    let draft = ""
-    if (review.sentiment === "positive") {
-      draft = `Hi ${review.guestName}, thank you so much for your wonderful review of ${review.propertyName}! We are absolutely thrilled you enjoyed your stay and hope to welcome you back soon.`
-    } else if (review.sentiment === "negative") {
-      draft = `Hi ${review.guestName}, we are very sorry to hear that your stay at ${review.propertyName} did not meet expectations. We are looking into the heating/insulation issues you raised to ensure they are immediately resolved.`
-    } else {
-      draft = `Hi ${review.guestName}, thank you for sharing your experience at ${review.propertyName}. We appreciate your constructive feedback and will work on improving check-in and noise insulation as mentioned.`
+  const handleOpenReplyModal = async (review) => {
+    setViewState(prev => ({
+      ...prev,
+      activeReviewForReply: review,
+      draftReplyText: "Generating response with Gemini AI...",
+      isGeneratingReply: true
+    }))
+
+    try {
+      const realReply = await generateReply(review.id)
+      setViewState(prev => {
+        if (prev.activeReviewForReply?.id !== review.id) return prev
+        return {
+          ...prev,
+          draftReplyText: realReply,
+          isGeneratingReply: false
+        }
+      })
+    } catch (err) {
+      console.warn("Real-time Gemini generation failed, falling back to local simulation:", err)
+      
+      let draft = ""
+      if (review.sentiment === "positive") {
+        draft = `Hi ${review.guestName}, thank you so much for your wonderful review of ${review.propertyName}! We are absolutely thrilled you enjoyed your stay and hope to welcome you back soon.`
+      } else if (review.sentiment === "negative") {
+        draft = `Hi ${review.guestName}, we are very sorry to hear that your stay at ${review.propertyName} did not meet expectations. We are looking into the heating/insulation issues you raised to ensure they are immediately resolved.`
+      } else {
+        draft = `Hi ${review.guestName}, thank you for sharing your experience at ${review.propertyName}. We appreciate your constructive feedback and will work on improving check-in and noise insulation as mentioned.`
+      }
+
+      setViewState(prev => {
+        if (prev.activeReviewForReply?.id !== review.id) return prev
+        return {
+          ...prev,
+          draftReplyText: draft,
+          isGeneratingReply: false
+        }
+      })
     }
-    setDraftReplyText(draft)
   }
 
   const handleSendReply = async () => {
     try {
       await updateReviewResponse(activeReviewForReply.id, draftReplyText)
       navigator.clipboard.writeText(draftReplyText).catch(() => {})
-      setToastMessage({ text: `Response sent to ${activeReviewForReply.guestName} and recorded in database!`, type: "success" })
+      setViewState(prev => ({
+        ...prev,
+        toastMessage: { text: `Response sent to ${activeReviewForReply.guestName} and recorded in database!`, type: "success" },
+        activeReviewForReply: null
+      }))
     } catch (err) {
-      setToastMessage({ text: `Failed to save response: ${err.message || err}`, type: "error" })
+      setViewState(prev => ({
+        ...prev,
+        toastMessage: { text: `Failed to save response: ${err.message || err}`, type: "error" },
+        activeReviewForReply: null
+      }))
     }
-    setActiveReviewForReply(null)
   }
 
   return (
@@ -114,7 +157,7 @@ export default function Reviews() {
           <Toast
             message={typeof toastMessage === "string" ? toastMessage : toastMessage.text}
             type={typeof toastMessage === "string" ? "success" : toastMessage.type}
-            onClose={() => setToastMessage(null)}
+            onClose={() => setViewState(prev => ({ ...prev, toastMessage: null }))}
           />
         </div>
       )}
@@ -122,15 +165,15 @@ export default function Reviews() {
       {/* AI Reply Dialog */}
       <Modal
         isOpen={!!activeReviewForReply}
-        onClose={() => setActiveReviewForReply(null)}
+        onClose={() => setViewState(prev => ({ ...prev, activeReviewForReply: null }))}
         title={activeReviewForReply ? `AI Response for ${activeReviewForReply.guestName}` : ""}
         footer={
           <>
-            <Button variant="ghost" onClick={() => setActiveReviewForReply(null)}>
+            <Button variant="ghost" onClick={() => setViewState(prev => ({ ...prev, activeReviewForReply: null }))} disabled={isGeneratingReply}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleSendReply}>
-              Copy & Send Reply
+            <Button variant="primary" onClick={handleSendReply} disabled={isGeneratingReply}>
+              {isGeneratingReply ? "Generating..." : "Copy & Send Reply"}
             </Button>
           </>
         }
@@ -145,16 +188,18 @@ export default function Reviews() {
             </blockquote>
             
             <div className="flex items-center gap-1.5 mt-4">
-              <Sparkles size={14} className="text-(--color-brand-500) animate-pulse-soft" />
+              <Sparkles size={14} className={`text-(--color-brand-500) ${isGeneratingReply ? "animate-spin" : "animate-pulse-soft"}`} />
               <span className="text-xs font-semibold text-(--color-brand-600) dark:text-white">
-                Recommended Draft response:
+                {isGeneratingReply ? "Gemini AI is generating reply..." : "Recommended Draft response:"}
               </span>
             </div>
             
             <textarea
+              aria-label="Recommended Draft Response Text"
               className="w-full h-28 p-3.5 rounded-xl border border-(--color-border) dark:border-(--color-border-dark) bg-white dark:bg-(--color-surface-elevated-dark) text-xs outline-none focus:ring-2 focus:ring-(--color-brand-400)/20 focus:border-(--color-brand-400) transition-all resize-none text-(--color-brand-600) dark:text-white leading-relaxed"
               value={draftReplyText}
-              onChange={(e) => setDraftReplyText(e.target.value)}
+              disabled={isGeneratingReply}
+              onChange={(e) => setViewState(prev => ({ ...prev, draftReplyText: e.target.value }))}
             />
           </div>
         )}
@@ -183,7 +228,8 @@ export default function Reviews() {
       {/* Tabs - Inbox vs Spam */}
       <div className="flex border-b border-(--color-border) dark:border-(--color-border-dark) mb-6 gap-6 relative z-10">
         <button
-          onClick={() => setActiveTab("inbox")}
+          type="button"
+          onClick={() => setViewState(prev => ({ ...prev, activeTab: "inbox" }))}
           className={`pb-3 text-sm font-semibold transition-all cursor-pointer relative ${
             activeTab === "inbox"
               ? "text-(--color-brand-600) dark:text-white border-b-2 border-(--color-brand-500)"
@@ -193,7 +239,8 @@ export default function Reviews() {
           Inbox ({inboxCount})
         </button>
         <button
-          onClick={() => setActiveTab("spam")}
+          type="button"
+          onClick={() => setViewState(prev => ({ ...prev, activeTab: "spam" }))}
           className={`pb-3 text-sm font-semibold transition-all cursor-pointer relative flex items-center gap-1.5 ${
             activeTab === "spam"
               ? "text-red-500 border-b-2 border-red-500"
@@ -212,7 +259,7 @@ export default function Reviews() {
       <div className="max-w-md mb-6">
         <Input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => setViewState(prev => ({ ...prev, search: e.target.value }))}
           placeholder={activeTab === "inbox" ? "Search inbox reviews..." : "Search flagged spam reviews..."}
           icon={<Search size={16} />}
           fullWidth

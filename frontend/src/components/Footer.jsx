@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom"
 
+const CURRENT_YEAR = new Date().getFullYear()
+
 export default function Footer() {
   return (
     <footer className="relative border-t border-(--color-border)/60 dark:border-(--color-border-dark)/60 bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark) overflow-hidden">
@@ -82,7 +84,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-12 pt-6 border-t border-(--color-border)/50 dark:border-(--color-border-dark)/50 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-(--color-muted) dark:text-(--color-muted-dark)">
-          <p>&copy; {new Date().getFullYear()} RevLens AI. All rights reserved.</p>
+          <p>&copy; {CURRENT_YEAR} RevLens AI. All rights reserved.</p>
           <p>Built for homestay owners & tourists</p>
         </div>
       </div>

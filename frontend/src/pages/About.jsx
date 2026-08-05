@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom"
-import { Button } from "../components/ui"
+import Button from "../components/ui/Button"
 import useScrollReveal from "../hooks/useScrollReveal"
 import { ArrowUpRight, Lightbulb, Target, Heart, Code2, Rocket } from "lucide-react"
 

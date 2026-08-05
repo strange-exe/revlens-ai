@@ -2,7 +2,9 @@ import { useState, useMemo, useEffect } from "react"
 import { useProperty } from "../context/PropertyContext"
 import { useNavigate } from "react-router-dom"
 import Modal from "../components/ui/Modal"
-import { Select, Loader, Toast } from "../components/ui"
+import Select from "../components/ui/Select"
+import Loader from "../components/ui/Loader"
+import Toast from "../components/ui/Toast"
 
 import { 
   Building, 
@@ -33,26 +35,39 @@ export default function Properties() {
   
   const navigate = useNavigate()
   
-  const [searchTerm, setSearchTerm] = useState("")
-  const [locationFilter, setLocationFilter] = useState("all")
-  const [activeTab, setActiveTab] = useState("all") // "all" | "mine" | "nearby"
-  
-  // Form state for adding a property
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [newPropName, setNewPropName] = useState("")
-  const [newPropLocation, setNewPropLocation] = useState("")
-  const [newPropPrice, setNewPropPrice] = useState("5000")
-  const [addSuccess, setAddSuccess] = useState(false)
-  const [toastMessage, setToastMessage] = useState(null)
+  const [viewState, setViewState] = useState({
+    searchTerm: "",
+    locationFilter: "all",
+    activeTab: "all",
+    showAddForm: false,
+    newPropName: "",
+    newPropLocation: "",
+    newPropPrice: "5000",
+    addSuccess: false,
+    toastMessage: null,
+    compareMode: false,
+    compareProp1: null,
+    compareProp2: null
+  })
 
-  // Comparison State
-  const [compareMode, setCompareMode] = useState(false)
-  const [compareProp1, setCompareProp1] = useState(null)
-  const [compareProp2, setCompareProp2] = useState(null)
+  const {
+    searchTerm,
+    locationFilter,
+    activeTab,
+    showAddForm,
+    newPropName,
+    newPropLocation,
+    newPropPrice,
+    addSuccess,
+    toastMessage,
+    compareMode,
+    compareProp1,
+    compareProp2
+  } = viewState
 
   useEffect(() => {
     if (error) {
-      setToastMessage({ text: error, type: "error" })
+      setViewState(prev => ({ ...prev, toastMessage: { text: error, type: "error" } }))
     }
   }, [error])
 
@@ -132,17 +147,26 @@ export default function Properties() {
         price: `₹${parseInt(newPropPrice).toLocaleString('en-IN')}/night`
       })
 
-      setAddSuccess(true)
-      setNewPropName("")
-      setNewPropLocation("")
-      setToastMessage({ text: `Successfully registered ${newPropName}!`, type: "success" })
+      setViewState(prev => ({
+        ...prev,
+        addSuccess: true,
+        newPropName: "",
+        newPropLocation: "",
+        toastMessage: { text: `Successfully registered ${newPropName}!`, type: "success" }
+      }))
       
       setTimeout(() => {
-        setAddSuccess(false)
-        setShowAddForm(false)
+        setViewState(prev => ({
+          ...prev,
+          addSuccess: false,
+          showAddForm: false
+        }))
       }, 2000)
     } catch (err) {
-      setToastMessage({ text: `Failed to register property: ${err.message || err}`, type: "error" })
+      setViewState(prev => ({
+        ...prev,
+        toastMessage: { text: `Failed to register property: ${err.message || err}`, type: "error" }
+      }))
     }
   }
 
@@ -165,7 +189,7 @@ export default function Properties() {
           <Toast
             message={toastMessage.text}
             type={toastMessage.type}
-            onClose={() => setToastMessage(null)}
+            onClose={() => setViewState(prev => ({ ...prev, toastMessage: null }))}
           />
         </div>
       )}
@@ -182,7 +206,9 @@ export default function Properties() {
         </div>
 
         <button
-          onClick={() => setShowAddForm(!showAddForm)}
+          type="button"
+          aria-expanded={showAddForm}
+          onClick={() => setViewState(prev => ({ ...prev, showAddForm: !prev.showAddForm }))}
           className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-(--color-brand-500) hover:bg-(--color-brand-600) text-white font-semibold text-xs shadow-md transition-all cursor-pointer min-h-[40px]"
         >
           <Plus size={16} />
@@ -206,37 +232,40 @@ export default function Properties() {
           ) : (
             <form onSubmit={handleAddProperty} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-(--color-muted) dark:text-(--color-muted-dark)">Property Name</label>
+                <label htmlFor="new-property-name" className="text-xs font-bold text-(--color-muted) dark:text-(--color-muted-dark)">Property Name</label>
                 <input
+                  id="new-property-name"
                   type="text"
                   required
                   placeholder="e.g. Whispering Palms Retreat"
                   value={newPropName}
-                  onChange={(e) => setNewPropName(e.target.value)}
+                  onChange={(e) => setViewState(prev => ({ ...prev, newPropName: e.target.value }))}
                   className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-(--color-border) dark:border-(--color-border-dark) bg-white dark:bg-(--color-surface-muted-dark) text-(--color-brand-600) dark:text-white focus:outline-none focus:ring-2 focus:ring-(--color-brand-500)/20 focus:border-(--color-brand-500) transition-all"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-(--color-muted) dark:text-(--color-muted-dark)">Location (City/Region)</label>
+                <label htmlFor="new-property-location" className="text-xs font-bold text-(--color-muted) dark:text-(--color-muted-dark)">Location (City/Region)</label>
                 <input
+                  id="new-property-location"
                   type="text"
                   required
                   placeholder="e.g. Goa"
                   value={newPropLocation}
-                  onChange={(e) => setNewPropLocation(e.target.value)}
+                  onChange={(e) => setViewState(prev => ({ ...prev, newPropLocation: e.target.value }))}
                   className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-(--color-border) dark:border-(--color-border-dark) bg-white dark:bg-(--color-surface-muted-dark) text-(--color-brand-600) dark:text-white focus:outline-none focus:ring-2 focus:ring-(--color-brand-500)/20 focus:border-(--color-brand-500) transition-all"
                 />
               </div>
 
               <div className="flex gap-2">
                 <div className="space-y-1 flex-1">
-                  <label className="text-xs font-bold text-(--color-muted) dark:text-(--color-muted-dark)">Est. Price / Night</label>
+                  <label htmlFor="new-property-price" className="text-xs font-bold text-(--color-muted) dark:text-(--color-muted-dark)">Est. Price / Night</label>
                   <input
+                    id="new-property-price"
                     type="number"
                     placeholder="5000"
                     value={newPropPrice}
-                    onChange={(e) => setNewPropPrice(e.target.value)}
+                    onChange={(e) => setViewState(prev => ({ ...prev, newPropPrice: e.target.value }))}
                     className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-(--color-border) dark:border-(--color-border-dark) bg-white dark:bg-(--color-surface-muted-dark) text-(--color-brand-600) dark:text-white focus:outline-none focus:ring-2 focus:ring-(--color-brand-500)/20 focus:border-(--color-brand-500) transition-all"
                   />
                 </div>
@@ -261,9 +290,10 @@ export default function Properties() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-(--color-muted) dark:text-(--color-muted-dark)" size={16} />
               <input
                 type="text"
+                aria-label="Search properties"
                 placeholder="Search by property name or location..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => setViewState(prev => ({ ...prev, searchTerm: e.target.value }))}
                 className="w-full text-xs pl-10 pr-4 py-2.5 rounded-xl border border-(--color-border) dark:border-(--color-border-dark) bg-white dark:bg-white/5 text-(--color-brand-600) dark:text-white focus:outline-none focus:ring-2 focus:ring-(--color-brand-500)/10 focus:border-(--color-brand-500) transition-all"
               />
             </div>
@@ -271,10 +301,15 @@ export default function Properties() {
             <Select
               icon={MapPin}
               value={locationFilter}
-              onChange={setLocationFilter}
+              onChange={(val) => setViewState(prev => ({ ...prev, locationFilter: val }))}
               options={[
                 { value: "all", label: "All Locations" },
-                ...locations.filter(l => l !== "all").map(l => ({ value: l, label: l }))
+                ...locations.reduce((acc, l) => {
+                  if (l !== "all") {
+                    acc.push({ value: l, label: l })
+                  }
+                  return acc
+                }, [])
               ]}
               className="w-full"
             />
@@ -283,20 +318,23 @@ export default function Properties() {
           {/* Tab buttons */}
           <div className="flex rounded-xl bg-(--color-surface-muted) dark:bg-white/5 p-1 border border-(--color-border) dark:border-white/5 self-start md:self-center">
             <button
-              onClick={() => setActiveTab("all")}
+              type="button"
+              onClick={() => setViewState(prev => ({ ...prev, activeTab: "all" }))}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === "all" ? "bg-white dark:bg-(--color-surface-elevated-dark) text-(--color-brand-600) dark:text-white shadow-sm" : "text-(--color-muted) dark:text-(--color-muted-dark) hover:text-(--color-brand-500) dark:hover:text-white"}`}
             >
               All Properties
             </button>
             <button
-              onClick={() => setActiveTab("mine")}
+              type="button"
+              onClick={() => setViewState(prev => ({ ...prev, activeTab: "mine" }))}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${activeTab === "mine" ? "bg-white dark:bg-(--color-surface-elevated-dark) text-(--color-brand-600) dark:text-white shadow-sm" : "text-(--color-muted) dark:text-(--color-muted-dark) hover:text-(--color-brand-500) dark:hover:text-white"}`}
             >
               My Portfolio
               <span className={`inline-flex items-center justify-center w-4 h-4 text-[10px] rounded-full ${activeTab === "mine" ? "bg-(--color-brand-500) text-white" : "bg-black/10 dark:bg-white/10"}`}>{mineCount}</span>
             </button>
             <button
-              onClick={() => setActiveTab("nearby")}
+              type="button"
+              onClick={() => setViewState(prev => ({ ...prev, activeTab: "nearby" }))}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${activeTab === "nearby" ? "bg-white dark:bg-(--color-surface-elevated-dark) text-(--color-brand-600) dark:text-white shadow-sm" : "text-(--color-muted) dark:text-(--color-muted-dark) hover:text-(--color-brand-500) dark:hover:text-white"}`}
             >
               Nearby Competitors
@@ -317,7 +355,8 @@ export default function Properties() {
                 No properties match the search or location criteria.
               </p>
               <button 
-                onClick={() => { setSearchTerm(""); setLocationFilter("all"); setActiveTab("all"); }}
+                type="button"
+                onClick={() => setViewState(prev => ({ ...prev, searchTerm: "", locationFilter: "all", activeTab: "all" }))}
                 className="text-xs font-bold text-(--color-brand-500) hover:underline"
               >
                 Clear filters
@@ -392,6 +431,7 @@ export default function Properties() {
                       {p.isUserProperty ? (
                         <>
                           <button
+                            type="button"
                             onClick={() => handleSelectProperty(p.id.toString())}
                             className={`flex-1 text-center py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                               isSelected
@@ -403,11 +443,13 @@ export default function Properties() {
                           </button>
                           
                           <button
+                            type="button"
                             onClick={() => {
                               setSelectedPropertyId(p.id.toString());
                               navigate("/dashboard/reviews");
                             }}
                             title="Analyze feedback reviews"
+                            aria-label="Analyze feedback reviews"
                             className="p-2 rounded-xl bg-(--color-surface-muted) dark:bg-white/5 text-(--color-muted) dark:text-(--color-muted-dark) hover:text-(--color-brand-500) dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
                           >
                             <ArrowRight size={14} />
@@ -415,11 +457,15 @@ export default function Properties() {
                         </>
                       ) : (
                         <button
+                          type="button"
                           onClick={() => {
                             const matchingMyProp = myPropertiesWithStats.find(myP => myP.location.toLowerCase() === p.location.toLowerCase()) || myPropertiesWithStats[0]
-                            setCompareProp1(matchingMyProp)
-                            setCompareProp2(p)
-                            setCompareMode(true)
+                            setViewState(prev => ({
+                              ...prev,
+                              compareProp1: matchingMyProp,
+                              compareProp2: p,
+                              compareMode: true
+                            }))
                           }}
                           className="w-full text-center py-2 rounded-xl text-xs font-semibold bg-white/5 dark:bg-white/5 border border-(--color-accent-500)/25 hover:border-(--color-accent-500)/60 text-(--color-accent-600) dark:text-(--color-accent-400) hover:bg-(--color-accent-500)/10 transition-all cursor-pointer"
                         >
@@ -571,7 +617,7 @@ export default function Properties() {
       {/* Comparison Modal */}
       <Modal
         isOpen={compareMode}
-        onClose={() => setCompareMode(false)}
+        onClose={() => setViewState(prev => ({ ...prev, compareMode: false }))}
         title="Side-by-Side Comparison"
         size="lg"
       >

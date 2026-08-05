@@ -1,5 +1,11 @@
 import React from "react"
 
+const sizeMap = {
+  sm: { circle: "h-5 w-5", text: "text-xs" },
+  md: { circle: "h-9 w-9", text: "text-sm" },
+  lg: { circle: "h-14 w-14", text: "text-base" },
+}
+
 /**
  * @typedef {Object} LoaderProps
  * @property {('sm'|'md'|'lg')} [size='md'] - Visual size of the loader
@@ -18,12 +24,6 @@ export default function Loader({
   text,
   fullPage = false,
 }) {
-  const sizeMap = {
-    sm: { circle: "h-5 w-5", text: "text-xs" },
-    md: { circle: "h-9 w-9", text: "text-sm" },
-    lg: { circle: "h-14 w-14", text: "text-base" },
-  }
-
   const loaderElement = (
     <div className="flex flex-col items-center justify-center gap-3">
       {variant === "spinner" && (
@@ -50,15 +50,15 @@ export default function Loader({
 
       {variant === "pulse" && (
         <div
-          className={`rounded-full bg-(--color-brand-400) animate-ping ${sizeMap[size].circle}`}
+          className={`rounded-full bg-(--color-brand-400) animate-pulse ${sizeMap[size].circle}`}
         />
       )}
 
       {variant === "dots" && (
         <div className="flex gap-1.5 items-center">
-          <div className="w-2.5 h-2.5 rounded-full bg-(--color-brand-400) animate-bounce [animation-delay:-0.3s]" />
-          <div className="w-2.5 h-2.5 rounded-full bg-(--color-brand-400) animate-bounce [animation-delay:-0.15s]" />
-          <div className="w-2.5 h-2.5 rounded-full bg-(--color-brand-400) animate-bounce" />
+          <div className="w-2.5 h-2.5 rounded-full bg-(--color-brand-400) animate-smooth-bob [animation-delay:-0.3s]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-(--color-brand-400) animate-smooth-bob [animation-delay:-0.15s]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-(--color-brand-400) animate-smooth-bob" />
         </div>
       )}
 

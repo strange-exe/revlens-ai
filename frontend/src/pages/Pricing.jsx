@@ -1,8 +1,127 @@
 import { useNavigate } from "react-router-dom"
-import { Button } from "../components/ui"
+import Button from "../components/ui/Button"
 import { Check, Sparkles, Building2, Zap, ArrowRight, ChevronDown, ChevronUp } from "lucide-react"
 import useScrollReveal from "../hooks/useScrollReveal"
-import { useState } from "react"
+import { useState, useRef } from "react"
+
+// Advanced 3D Parallax Card component with spotlight reflection, dynamic casting shadow, and multi-layered depth
+function ParallaxCard({ children, className, highlighted, style }) {
+  const cardRef = useRef(null)
+  const [parallaxState, setParallaxState] = useState({
+    rotateX: 0,
+    rotateY: 0,
+    shineX: 50,
+    shineY: 50,
+    isHovered: false
+  })
+  const { rotateX, rotateY, shineX, shineY, isHovered } = parallaxState
+
+  const handleMouseMove = (e) => {
+    if (!cardRef.current) return
+    const card = cardRef.current
+    const rect = card.getBoundingClientRect()
+    
+    // Calculate mouse position relative to card boundaries
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    
+    // Convert to percentage (0 to 100) for radial gradient spotlight placement
+    const px = (x / rect.width) * 100
+    const py = (y / rect.height) * 100
+    
+    // Calculate 3D rotation angles (-10 to 10 degrees for high-fidelity interactive feel)
+    const maxRotation = 9
+    const rx = ((y - rect.height / 2) / (rect.height / 2)) * -maxRotation
+    const ry = ((x - rect.width / 2) / (rect.width / 2)) * maxRotation
+    
+    setParallaxState({
+      rotateX: rx,
+      rotateY: ry,
+      shineX: px,
+      shineY: py,
+      isHovered: true
+    })
+  }
+
+  const handleMouseEnter = () => {
+    setParallaxState(prev => ({ ...prev, isHovered: true }))
+  }
+
+  const handleMouseLeave = () => {
+    setParallaxState({
+      rotateX: 0,
+      rotateY: 0,
+      shineX: 50,
+      shineY: 50,
+      isHovered: false
+    })
+  }
+
+  // Cast shadow in opposite direction of tilt for premium 3D depth perception
+  const shadowStyle = isHovered
+    ? highlighted
+      ? `${-rotateY * 3.5}px ${rotateX * 3.5}px 55px rgba(0, 71, 171, 0.35), 0 10px 30px rgba(0, 0, 0, 0.15)`
+      : `${-rotateY * 2.5}px ${rotateX * 2.5}px 45px rgba(0, 0, 0, 0.16), 0 5px 15px rgba(0, 0, 0, 0.08)`
+    : highlighted
+      ? "0 20px 40px -15px rgba(0, 71, 171, 0.4), 0 5px 15px rgba(0, 0, 0, 0.1)"
+      : "0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02)"
+
+  const cardStyle = {
+    transform: isHovered 
+      ? `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)` 
+      : 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
+    transition: isHovered ? 'none' : 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease',
+    transformStyle: 'preserve-3d',
+    boxShadow: shadowStyle,
+    ...style
+  }
+
+  return (
+    <div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={cardStyle}
+      className={`relative select-none ${className}`}
+    >
+      {/* Shifting background neon backglow for highlighted card */}
+      {highlighted && (
+        <div 
+          className="absolute inset-0 rounded-2xl bg-gradient-to-br from-(--color-accent-400) to-(--color-brand-500) opacity-25 blur-3xl -z-10 transition-transform duration-500 scale-[0.9] group-hover:scale-[1.05]"
+          style={{
+            transform: isHovered 
+              ? `translate3d(${-rotateY * 0.6}px, ${-rotateX * 0.6}px, -30px)` 
+              : 'translate3d(0,0,0)',
+            transition: isHovered ? 'none' : 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+        />
+      )}
+
+      {/* Dynamic light reflection layer */}
+      <div
+        className="absolute inset-0 pointer-events-none z-30 transition-opacity duration-300 rounded-2xl overflow-hidden"
+        style={{
+          opacity: isHovered ? (highlighted ? 0.35 : 0.15) : 0,
+          background: `radial-gradient(circle 250px at ${shineX}% ${shineY}%, rgba(255,255,255,0.85), transparent 85%)`,
+          mixBlendMode: 'overlay',
+        }}
+      />
+
+      {/* 3D Depth Content Layer */}
+      <div 
+        style={{ 
+          transform: isHovered ? 'translateZ(35px)' : 'translateZ(0px)', 
+          transition: isHovered ? 'none' : 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+          transformStyle: 'preserve-3d' 
+        }}
+        className="h-full w-full relative z-10"
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
 
 const plans = [
   {
@@ -89,6 +208,8 @@ function FaqItem({ faq }) {
   return (
     <div className="reveal rounded-2xl widget-card overflow-hidden transition-all duration-300 hover:shadow-md">
       <button
+        type="button"
+        aria-expanded={open}
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between p-6 text-left cursor-pointer"
       >
@@ -119,38 +240,39 @@ export default function Pricing() {
   return (
     <div ref={containerRef}>
       {/* Hero Banner */}
-      <section className="relative min-h-[100dvh] flex items-center overflow-hidden bg-gradient-to-b from-(--color-brand-50) to-(--color-surface) dark:from-(--color-brand-900)/20 dark:to-(--color-surface-dark) pt-32 pb-20">
+      <section className="relative min-h-[80dvh] flex items-center overflow-hidden bg-gradient-to-b from-(--color-brand-50) to-(--color-surface) dark:from-(--color-brand-900)/20 dark:to-(--color-surface-dark) pt-32 pb-20">
         <div className="absolute inset-0 noise-overlay" />
         <div className="absolute inset-0 grid-pattern" />
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-(--color-brand-200)/20 dark:bg-(--color-brand-800)/30 blur-[120px]" />
 
         <div className="relative w-full max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <span className="reveal font-heading text-xs font-bold tracking-[0.2em] uppercase text-(--color-brand-400)">
-            Pricing
+            Pricing Options
           </span>
-          <h1 className="reveal font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-(--color-brand-600) dark:text-white mt-3 leading-tight">
+          <h1 className="reveal font-heading text-4xl sm:text-5xl lg:text-6xl font-bold text-(--color-brand-600) dark:text-white mt-3 leading-tight font-serif">
             Simple, transparent pricing
           </h1>
-          <p className="reveal mt-4 text-base text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed max-w-lg mx-auto">
+          <p className="reveal mt-4 text-base text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed max-w-lg mx-auto font-sans">
             Start free, upgrade when you're ready. No hidden fees, no lock-in contracts. Cancel anytime.
           </p>
         </div>
       </section>
 
       {/* Pricing Cards */}
-      <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden bg-white/30 dark:bg-black/30 backdrop-blur-3xl">
         <div className="absolute inset-0 noise-overlay" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start max-w-lg lg:max-w-none mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10 items-stretch max-w-lg lg:max-w-none mx-auto">
             {plans.map((plan, i) => (
-              <div
+              <ParallaxCard
                 key={plan.name}
-                className={`reveal relative rounded-2xl overflow-hidden transition-all duration-500 hover:-translate-y-1 ${
+                highlighted={plan.highlighted}
+                className={`reveal relative rounded-2xl overflow-hidden flex flex-col justify-between h-full group ${
                   plan.highlighted
-                    ? "bg-gradient-to-b from-(--color-brand-600) to-(--color-brand-800) dark:from-(--color-brand-700) dark:to-black text-white shadow-2xl ring-1 ring-(--color-brand-400)/30 md:scale-[1.04]"
-                    : "widget-card hover:shadow-xl"
+                    ? "bg-gradient-to-b from-(--color-brand-600) via-(--color-brand-700) to-(--color-brand-900) dark:from-(--color-brand-700) dark:via-(--color-brand-800) dark:to-black text-white ring-1 ring-(--color-brand-400)/30 md:scale-[1.04]"
+                    : "widget-card"
                 }`}
-                style={{ transitionDelay: `${i * 0.1}s` }}
+                style={{ transitionDelay: `${i * 0.1}s`, transformStyle: 'preserve-3d' }}
               >
                 {/* Top gradient bar */}
                 {!plan.highlighted && (
@@ -162,69 +284,84 @@ export default function Pricing() {
                 )}
 
                 {plan.highlighted && (
-                  <div className="flex justify-center pt-4">
+                  <div className="flex justify-center pt-4" style={{ transform: 'translateZ(25px)' }}>
                     <span className="px-4 py-1 rounded-full bg-(--color-accent-500) text-black text-[10px] font-bold uppercase tracking-wider shadow-lg">
                       Most Popular
                     </span>
                   </div>
                 )}
 
-                <div className="p-7">
-                  <div className={`p-3 rounded-xl w-fit mb-4 ${plan.highlighted ? "bg-white/10" : "bg-(--color-brand-50) dark:bg-(--color-brand-800)"}`}>
-                    <span className={plan.highlighted ? "text-(--color-accent-400)" : "text-(--color-brand-500) dark:text-(--color-brand-300)"}>
-                      {plan.icon}
-                    </span>
-                  </div>
-
-                  <h3 className={`font-heading text-lg font-bold ${plan.highlighted ? "text-white" : "text-(--color-brand-600) dark:text-white"}`}>
-                    {plan.name}
-                  </h3>
-
-                  <div className="mt-3 flex items-baseline gap-1">
-                    <span className={`font-heading text-4xl font-bold ${plan.highlighted ? "text-white" : "text-(--color-brand-600) dark:text-white"}`}>
-                      {plan.price}
-                    </span>
-                    {plan.period && (
-                      <span className={`text-sm ${plan.highlighted ? "text-white/60" : "text-(--color-muted) dark:text-(--color-muted-dark)"}`}>
-                        {plan.period}
+                <div className="p-8 flex flex-col justify-between h-full flex-grow" style={{ transformStyle: 'preserve-3d' }}>
+                  {/* Upper Section */}
+                  <div className="space-y-6" style={{ transformStyle: 'preserve-3d' }}>
+                    <div 
+                      className={`p-3.5 rounded-2xl w-fit ${plan.highlighted ? "bg-white/10" : "bg-(--color-brand-50) dark:bg-(--color-brand-800)"}`}
+                      style={{ transform: 'translateZ(45px)' }}
+                    >
+                      <span className={plan.highlighted ? "text-(--color-accent-400)" : "text-(--color-brand-500) dark:text-(--color-brand-300)"}>
+                        {plan.icon}
                       </span>
-                    )}
+                    </div>
+
+                    <h3 
+                      className={`font-heading text-xl font-bold ${plan.highlighted ? "text-white" : "text-(--color-brand-600) dark:text-white"}`}
+                      style={{ transform: 'translateZ(30px)' }}
+                    >
+                      {plan.name}
+                    </h3>
+
+                    <div className="mt-3 flex items-baseline gap-1" style={{ transform: 'translateZ(40px)' }}>
+                      <span className={`font-heading text-4xl sm:text-5xl font-bold tracking-tight ${plan.highlighted ? "text-white" : "text-(--color-brand-600) dark:text-white"} font-serif`}>
+                        {plan.price}
+                      </span>
+                      {plan.period && (
+                        <span className={`text-sm font-semibold ${plan.highlighted ? "text-white/60" : "text-(--color-muted) dark:text-(--color-muted-dark)"}`}>
+                          {plan.period}
+                        </span>
+                      )}
+                    </div>
+
+                    <p 
+                      className={`text-xs leading-relaxed font-medium ${plan.highlighted ? "text-white/70" : "text-(--color-muted) dark:text-(--color-muted-dark)"}`}
+                      style={{ transform: 'translateZ(25px)' }}
+                    >
+                      {plan.description}
+                    </p>
+
+                    <div className={`h-px ${plan.highlighted ? "bg-white/10" : "bg-(--color-border) dark:bg-(--color-border-dark)"}`} style={{ transform: 'translateZ(20px)' }} />
+
+                    <ul className="space-y-4" style={{ transform: 'translateZ(28px)', transformStyle: 'preserve-3d' }}>
+                      {plan.features.map((f, idx) => (
+                        <li key={f} className="flex items-center gap-3 text-xs font-semibold" style={{ transform: `translateZ(${10 + idx * 2}px)` }}>
+                          <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${plan.highlighted ? "bg-(--color-accent-500)/20" : "bg-(--color-brand-50) dark:bg-(--color-brand-800)"}`}>
+                            <Check size={10} className={`shrink-0 ${plan.highlighted ? "text-(--color-accent-400)" : "text-(--color-brand-400)"}`} strokeWidth={3} />
+                          </div>
+                          <span className={plan.highlighted ? "text-white/80" : "text-(--color-muted) dark:text-(--color-muted-dark)"}>
+                            {f}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
 
-                  <p className={`mt-3 text-sm leading-relaxed ${plan.highlighted ? "text-white/70" : "text-(--color-muted) dark:text-(--color-muted-dark)"}`}>
-                    {plan.description}
-                  </p>
-
-                  <div className={`h-px my-6 ${plan.highlighted ? "bg-white/10" : "bg-(--color-border) dark:bg-(--color-border-dark)"}`} />
-
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-center gap-2.5 text-sm">
-                        <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${plan.highlighted ? "bg-(--color-accent-500)/20" : "bg-(--color-brand-50) dark:bg-(--color-brand-800)"}`}>
-                          <Check size={10} className={`shrink-0 ${plan.highlighted ? "text-(--color-accent-400)" : "text-(--color-brand-400)"}`} strokeWidth={3} />
-                        </div>
-                        <span className={plan.highlighted ? "text-white/80" : "text-(--color-muted) dark:text-(--color-muted-dark)"}>
-                          {f}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Button
-                    variant={plan.highlighted ? "custom" : "primary"}
-                    onClick={() => navigate(plan.ctaLink)}
-                    icon={<ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />}
-                    iconPosition="right"
-                    className={`group w-full ${
-                      plan.highlighted
-                        ? "bg-white border-none text-brand-600 hover:bg-brand-50 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-                        : "shadow-md hover:shadow-lg"
-                    }`}
-                  >
-                    {plan.cta}
-                  </Button>
+                  {/* Lower Button Section */}
+                  <div className="pt-8" style={{ transform: 'translateZ(50px)' }}>
+                    <Button
+                      variant={plan.highlighted ? "custom" : "primary"}
+                      onClick={() => navigate(plan.ctaLink)}
+                      icon={<ArrowRight size={14} className="transition-transform group-hover:translate-x-1.5" />}
+                      iconPosition="right"
+                      className={`group w-full py-4 text-xs font-bold ${
+                        plan.highlighted
+                          ? "bg-white/15 border border-white/20 text-white hover:bg-white hover:border-transparent hover:text-(--color-brand-600) shadow-lg hover:shadow-xl transition-all"
+                          : "shadow-md hover:shadow-lg"
+                      }`}
+                    >
+                      {plan.cta}
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              </ParallaxCard>
             ))}
           </div>
         </div>
@@ -236,13 +373,13 @@ export default function Pricing() {
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="reveal text-center mb-14">
             <span className="font-heading text-xs font-bold tracking-[0.2em] uppercase text-(--color-brand-400)">FAQ</span>
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-(--color-brand-600) dark:text-white mt-3">
+            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-(--color-brand-600) dark:text-white mt-3 font-serif">
               Common Questions
             </h2>
           </div>
           <div className="space-y-3">
-            {faqs.map((faq, i) => (
-              <FaqItem key={i} faq={faq} />
+            {faqs.map((faq) => (
+              <FaqItem key={faq.q} faq={faq} />
             ))}
           </div>
         </div>
