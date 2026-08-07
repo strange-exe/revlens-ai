@@ -193,7 +193,3 @@ bun.lockb
 backend/revlens.db
 *.db
 *.sqlite
-
-# ── Project Specific Ignored Folders ────────────────────────
-docs/
-screenshots/
