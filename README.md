@@ -4,14 +4,14 @@
 
 ---
 
-## 🔗 Live Links & Demo
+## Live Links & Demo
 
-- **Live Application URL**: [https://revlens.abhinesh.me](https://revlens.abhinesh.me)
+- **Live Application URL**: [https://revlens.abhinesh.codes](https://revlens.abhinesh.codes)
 - **Live Backend API**: [https://revlens-backend.onrender.com/](https://revlens-backend.onrender.com/)
 - **Interactive API Documentation (Swagger)**: [https://revlens-backend.onrender.com/docs](https://revlens-backend.onrender.com/docs)
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
 ![Login Page](screenshots/1_login.png)
 *Figure 1: User Login & JWT Authentication Interface*
@@ -27,7 +27,7 @@
 
 ---
 
-## ✨ Features
+## Features
 
 - **Guest Review Sentiment Analysis**: Automatically classifies incoming reviews into `positive`, `neutral`, or `negative` categories using Google Gemini AI.
 - **Spam & Abuse Detection**: Audits review text for promotional links, repetitive spam patterns, or malicious content.
@@ -39,7 +39,7 @@
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 - **Framework**: React 18 (Vite)
@@ -64,7 +64,7 @@
 
 ---
 
-## 📐 Architecture & Folder Structure
+## Architecture & Folder Structure
 
 ```
 revlens-ai/
@@ -137,7 +137,7 @@ erDiagram
 
 ---
 
-## ⚡ Quick Start & Setup Instructions
+## Quick Start & Setup Instructions
 
 ### 1. Prerequisites
 - Python 3.10+
@@ -190,7 +190,7 @@ Frontend will load at `http://localhost:5173`.
 
 ---
 
-## 📋 API Endpoints Documentation
+## API Endpoints Documentation
 
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :--- |
@@ -211,7 +211,7 @@ Frontend will load at `http://localhost:5173`.
 
 ---
 
-## ⚠️ Known Limitations & Deployment Notes
+## Known Limitations & Deployment Notes
 
 - **Render Free Tier Cold Start**: The backend hosted on Render's free web service spins down after 15 minutes of inactivity. Initial requests after idle may take 30–50 seconds to wake up the server.
 - **Gemini API Quota**: Free tier Gemini API rate limits permit up to 15 requests per minute. If exceeded, RevLens AI automatically falls back to built-in rule-based sentiment and mock response engines to ensure uninterrupted service.
