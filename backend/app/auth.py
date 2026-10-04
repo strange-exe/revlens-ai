@@ -6,7 +6,22 @@ from sqlalchemy.orm import Session
 from .database import get_db
 from . import crud, models
 
-JWT_SECRET = os.getenv("JWT_SECRET", "super_secret_revlens_jwt_key_2026")
+MIN_JWT_SECRET_LENGTH = 32
+
+
+def _load_jwt_secret() -> str:
+    """Return JWT_SECRET from the environment, or raise RuntimeError so the app refuses to start."""
+    # TODO(human): read JWT_SECRET, reject it if missing or shorter than MIN_JWT_SECRET_LENGTH
+    jwt_secret=os.environ.get("JWT_SECRET")
+    if not jwt_secret:
+        raise RuntimeError('JWT Secret is missing as Environment variable\nUse `python -c "import secrets; print(secrets.token_urlsafe(48))" to generate one')
+
+    if len(jwt_secret.strip())<MIN_JWT_SECRET_LENGTH:
+        raise RuntimeError(f"JWT Secret is too short, must be of {MIN_JWT_SECRET_LENGTH} char long")
+    return jwt_secret
+
+
+JWT_SECRET = _load_jwt_secret()
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 

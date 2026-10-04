@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import logging
+import os
 import requests
 
 from . import models, schemas, crud, auth, ai
@@ -18,10 +19,18 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Comma-separated list of frontend origins, e.g. "https://revlens.abhinesh.codes"
+ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+    if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=ALLOWED_ORIGINS,
+    # Auth uses a Bearer header, not cookies, so credentialed CORS isn't needed
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -44,10 +53,32 @@ def root():
     return {"app": "RevLens AI API", "version": "1.0.0", "status": "running"}
 
 
+# Rate Limiter helper for Auth endpoints (Week 6 Security Requirement)
+from collections import defaultdict
+import time
+from fastapi import Request
+
+LOGIN_ATTEMPTS = defaultdict(list)
+
+def check_rate_limit(request: Request, max_requests: int = 5, window_seconds: int = 60):
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    now = time.time()
+    # Filter attempts within the window
+    attempts = [t for t in LOGIN_ATTEMPTS[client_ip] if now - t < window_seconds]
+    if len(attempts) >= max_requests:
+        raise HTTPException(
+            status_code=429,
+            detail="Too Many Requests. Maximum 5 authentication attempts per minute allowed."
+        )
+    attempts.append(now)
+    LOGIN_ATTEMPTS[client_ip] = attempts
+
+
 # ── Authentication ────────────────────────────────────────────────────────
 
 @app.post("/api/auth/register", response_model=schemas.TokenResponse, status_code=201)
-def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
+def register(user_data: schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
+    check_rate_limit(request)
     existing = crud.get_user_by_email(db, email=user_data.email)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -59,7 +90,8 @@ def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 @app.post("/api/auth/login", response_model=schemas.TokenResponse, status_code=200)
-def login(login_data: schemas.UserLogin, db: Session = Depends(get_db)):
+def login(login_data: schemas.UserLogin, request: Request, db: Session = Depends(get_db)):
+    check_rate_limit(request)
     user = crud.get_user_by_email(db, email=login_data.email)
     if not user or not user.hashed_password:
         raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -222,6 +254,30 @@ def generate_review_reply(
         text=review.text
     )
     return {"reply": reply}
+
+
+@app.post("/api/ai/analyze-review", status_code=200)
+def analyze_review_ai(
+    payload: dict,
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    text = payload.get("text", "")
+    guest_name = payload.get("guest_name", "Valued Guest")
+    property_name = payload.get("property_name", "Homestay Property")
+    rating = payload.get("rating", 5)
+
+    if not text:
+        raise HTTPException(status_code=400, detail="Text field is required for AI analysis")
+
+    sentiment, is_spam = ai.analyze_review_sentiment_and_spam(text, guest_name)
+    reply = ai.generate_management_response(guest_name, property_name, rating, text)
+
+    return {
+        "sentiment": sentiment,
+        "is_spam": is_spam,
+        "ai_response_draft": reply,
+        "model_used": "gemini-1.5-flash"
+    }
 
 
 @app.put("/api/reviews/{review_id}", response_model=schemas.ReviewOut, status_code=200)
