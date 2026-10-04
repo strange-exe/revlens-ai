@@ -133,10 +133,12 @@ def google_auth(req: schemas.GoogleLoginRequest, db: Session = Depends(get_db)):
 def get_me(current_user: models.User = Depends(auth.get_current_user)):
     return current_user
 
-@app.get("/health")
+# HEAD is included because uptime monitors (e.g. UptimeRobot) probe with HEAD by default
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
-    # Returns a 200 OK with a simple JSON body
     return {"status": "healthy"}
+
+
 # ── Properties ────────────────────────────────────────────────────────────
 
 @app.get("/api/properties", response_model=list[schemas.PropertyOut], status_code=200)

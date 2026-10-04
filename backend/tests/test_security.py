@@ -153,3 +153,11 @@ def test_cors_allows_configured_origin():
 def test_cors_rejects_other_origins():
     res = _preflight("https://evil.example")
     assert "access-control-allow-origin" not in res.headers
+
+
+# ── Health check ─────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("method", ["GET", "HEAD"])
+def test_health_check_answers_uptime_monitors(method):
+    res = TestClient(app).request(method, "/health", headers={"Origin": "https://uptimerobot.com"})
+    assert res.status_code == 200
