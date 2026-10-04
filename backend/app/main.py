@@ -133,7 +133,10 @@ def google_auth(req: schemas.GoogleLoginRequest, db: Session = Depends(get_db)):
 def get_me(current_user: models.User = Depends(auth.get_current_user)):
     return current_user
 
-
+@app.get("/health")
+def health_check():
+    # Returns a 200 OK with a simple JSON body
+    return {"status": "healthy"}
 # ── Properties ────────────────────────────────────────────────────────────
 
 @app.get("/api/properties", response_model=list[schemas.PropertyOut], status_code=200)
