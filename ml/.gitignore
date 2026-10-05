@@ -1,0 +1,7 @@
+# Raw/processed data is scraped TripAdvisor text: never commit or redistribute it (see DATASETS.md)
+data/
+runs/
+artifacts/
+*.parquet
+*.jsonl
+*.onnx

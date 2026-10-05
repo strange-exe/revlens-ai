@@ -6,12 +6,12 @@ import os
 import requests
 
 from . import models, schemas, crud, auth, ai
-from .database import engine, get_db
+from .database import get_db
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-models.Base.metadata.create_all(bind=engine)
+# Schema is managed by Alembic: run `alembic upgrade head` before starting the app
 
 app = FastAPI(
     title="RevLens AI API",
@@ -38,6 +38,8 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_event():
+    ai.load_classifier()
+    ai.check_gemini_model()
     db = next(get_db())
     try:
         crud.seed_database(db)
@@ -187,15 +189,16 @@ def list_reviews(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    user_properties = crud.get_properties(db, user_id=current_user.id)
-    allowed_ids = [p.id for p in user_properties]
+    return reviews_visible_to(db, current_user, property_id, sentiment)
 
+
+def reviews_visible_to(db: Session, user: models.User, property_id: int | None = None, sentiment: str | None = None):
+    """The reviews a user may see: their own properties plus shared demo ones. One rule for every endpoint."""
+    allowed_ids = [p.id for p in crud.get_properties(db, user_id=user.id)]
     if property_id:
         if property_id not in allowed_ids:
             raise HTTPException(status_code=403, detail="Not authorized to access reviews for this property")
         return crud.get_reviews(db, property_id=property_id, sentiment=sentiment)
-    
-    # Filter all reviews by allowed property IDs
     reviews = []
     for pid in allowed_ids:
         reviews.extend(crud.get_reviews(db, property_id=pid, sentiment=sentiment))
@@ -229,13 +232,13 @@ def create_review(
     if prop and prop.user_id and prop.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to add reviews to this property")
     
-    # Auto-classify sentiment and spam if not already specified
-    if not review.sentiment or review.sentiment == "neutral":
-        sentiment, is_spam = ai.analyze_review_sentiment_and_spam(review.text, review.guest_name)
-        review.sentiment = sentiment
-        review.is_spam = is_spam
+    # A sentiment sent by the client is a human label; otherwise classify it here
+    if review.sentiment is not None:
+        return crud.create_review(db, review, label_source="human")
 
-    return crud.create_review(db, review)
+    result = ai.analyze_review_sentiment_and_spam(review.text, review.guest_name)
+    review.sentiment, review.is_spam = result.sentiment, result.is_spam
+    return crud.create_review(db, review, label_source=result.source, aspects=result.aspects)
 
 
 @app.post("/api/reviews/{review_id}/generate-reply", status_code=200)
@@ -258,7 +261,30 @@ def generate_review_reply(
         rating=review.rating,
         text=review.text
     )
-    return {"reply": reply}
+    return {"reply": reply.text, "source": reply.source}
+
+
+@app.get("/api/ai/status", status_code=200)
+def get_ai_status(current_user: models.User = Depends(auth.get_current_user)):
+    """Which engine is answering right now: fine-tuned model, LLM, or keyword/template fallbacks."""
+    return ai.ai_status()
+
+
+@app.post("/api/ai/ask", status_code=200)
+def ask_assistant(
+    body: schemas.AskRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """Answer a question from the user's own (non-spam) reviews, with the review ids it relied on."""
+    reviews = [r for r in reviews_visible_to(db, current_user, body.property_id)
+               if not (r.is_spam and not r.is_unflagged)]
+    newest = sorted(reviews, key=lambda r: r.date, reverse=True)[:ai.ASSISTANT_MAX_REVIEWS]
+    result = ai.answer_question(body.question, newest)
+    return {
+        "answer": result.answer, "citations": result.citations, "answerable": result.answerable,
+        "source": result.source, "reviews_considered": len(newest), "reviews_total": len(reviews),
+    }
 
 
 @app.post("/api/ai/analyze-review", status_code=200)
@@ -274,14 +300,17 @@ def analyze_review_ai(
     if not text:
         raise HTTPException(status_code=400, detail="Text field is required for AI analysis")
 
-    sentiment, is_spam = ai.analyze_review_sentiment_and_spam(text, guest_name)
+    result = ai.analyze_review_sentiment_and_spam(text, guest_name)
     reply = ai.generate_management_response(guest_name, property_name, rating, text)
 
     return {
-        "sentiment": sentiment,
-        "is_spam": is_spam,
-        "ai_response_draft": reply,
-        "model_used": "gemini-1.5-flash"
+        "sentiment": result.sentiment,
+        "is_spam": result.is_spam,
+        "aspects": result.aspects,
+        "label_source": result.source,
+        "ai_response_draft": reply.text,
+        "reply_source": reply.source,
+        "model_used": ai.GEMINI_MODEL if "llm" in (result.source, reply.source) else None,
     }
 
 

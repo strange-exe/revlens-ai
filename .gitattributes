@@ -1,0 +1,2 @@
+# Shell scripts run on Linux (B200, Render): always LF
+*.sh text eol=lf

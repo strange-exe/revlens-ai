@@ -1,38 +1,17 @@
 import { Link } from "react-router-dom"
+import Logo from "./Logo"
 
 const CURRENT_YEAR = new Date().getFullYear()
 
 export default function Footer() {
   return (
-    <footer className="relative border-t border-(--color-border)/60 dark:border-(--color-border-dark)/60 bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark) overflow-hidden">
-      <div className="absolute inset-0 noise-overlay" />
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
+    <footer className="border-t border-(--color-border) dark:border-(--color-border-dark) bg-(--color-surface) dark:bg-(--color-surface-dark)">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           <div className="col-span-2 lg:col-span-1">
-            <Link to="/" className="inline-flex items-center gap-2.5 group" aria-label="RevLens AI home">
-              <span className="flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
-                <svg width="28" height="28" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="footerLogoGrad" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#a78bfa" />
-                      <stop offset="100%" stopColor="#6d28d9" />
-                    </linearGradient>
-                  </defs>
-                  <rect width="36" height="36" rx="9" fill="url(#footerLogoGrad)" />
-                  <rect width="36" height="18" rx="9" fill="white" fillOpacity="0.12" />
-                  <path d="M10 9h9.5a5 5 0 0 1 0 10H14.5l5.5 8H16l-5.5-8.2V9Z" fill="white" fillOpacity="0.95" />
-                  <circle cx="26.5" cy="25.5" r="3.5" fill="#06b6d4" />
-                  <circle cx="26.5" cy="25.5" r="1.5" fill="#22d3ee" fillOpacity="0.7" />
-                </svg>
-              </span>
-              <span className="font-heading text-base font-bold leading-none">
-                <span className="text-(--color-brand-700) dark:text-white">Rev</span>
-                <span className="bg-gradient-to-r from-(--color-brand-500) to-(--color-accent-500) dark:from-(--color-brand-300) dark:to-(--color-accent-400) bg-clip-text text-transparent">Lens</span>
-                <span className="ml-0.5 text-[9px] font-semibold tracking-widest text-(--color-muted) dark:text-(--color-muted-dark) uppercase align-middle">AI</span>
-              </span>
-            </Link>
+            <Logo size={28} />
             <p className="mt-4 text-sm text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed max-w-xs">
-              AI-powered review intelligence for homestay owners. Understand your guests better, grow your business smarter.
+              Review analysis for homestay and small-hotel hosts: what guests praise, what they dislike, and what to reply.
             </p>
           </div>
           <div>
@@ -77,7 +56,7 @@ export default function Footer() {
           <div>
             <h4 className="text-[11px] font-bold tracking-[0.15em] uppercase text-(--color-muted) dark:text-(--color-muted-dark) mb-4">Stack</h4>
             <div className="space-y-1.5 text-sm text-(--color-muted) dark:text-(--color-muted-dark)">
-              {["React + Vite", "Tailwind CSS", "Cloudflare Pages","Render", "Cloudflare D1", "Gemini AI"].map((s) => (
+              {["React + Vite", "Tailwind CSS", "Cloudflare Pages", "Render", "Supabase PostgreSQL", "Gemini AI"].map((s) => (
                 <p key={s}>{s}</p>
               ))}
             </div>
@@ -85,7 +64,7 @@ export default function Footer() {
         </div>
         <div className="mt-12 pt-6 border-t border-(--color-border)/50 dark:border-(--color-border-dark)/50 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-(--color-muted) dark:text-(--color-muted-dark)">
           <p>&copy; {CURRENT_YEAR} RevLens AI. All rights reserved.</p>
-          <p>Built for homestay owners & tourists</p>
+          <p>Built for homestay and small-hotel hosts</p>
         </div>
       </div>
     </footer>

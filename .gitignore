@@ -193,3 +193,6 @@ bun.lockb
 backend/revlens.db
 *.db
 *.sqlite
+
+# B200 bundle built locally (contains only code, but is a build artifact)
+revlens-b200.zip

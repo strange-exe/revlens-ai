@@ -1,9 +1,15 @@
 import { useState, useRef, useEffect } from "react"
 import { ChevronDown, Check } from "lucide-react"
 
-export default function Select({ value, onChange, options, icon: Icon, className = "", dropdownClassName = "" }) {
+export default function Select({ value, onChange, options, icon: Icon, className = "", dropdownClassName = "", ariaLabel }) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
+  const triggerRef = useRef(null)
+
+  const close = () => {
+    setIsOpen(false)
+    triggerRef.current?.focus()
+  }
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -18,11 +24,15 @@ export default function Select({ value, onChange, options, icon: Icon, className
   const selectedOption = options.find(o => String(o.value) === String(value)) || options[0]
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div className={`relative ${className}`} ref={dropdownRef} onKeyDown={(e) => { if (e.key === "Escape" && isOpen) close() }}>
       <button
+        ref={triggerRef}
         type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label={ariaLabel ? `${ariaLabel}: ${selectedOption?.label}` : undefined}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between appearance-none bg-black/5 dark:bg-white/5 backdrop-blur-md border border-(--color-border) dark:border-white/10 text-xs font-semibold rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-(--color-brand-400)/40 focus:border-(--color-brand-400) text-(--color-brand-600) dark:text-white transition-all cursor-pointer min-h-[36px] hover:bg-black/10 dark:hover:bg-white/10"
+        className="w-full flex items-center justify-between appearance-none bg-black/5 dark:bg-white/5 backdrop-blur-md border border-(--color-border) dark:border-white/10 text-xs font-semibold rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-(--color-brand-400)/40 focus:border-(--color-brand-400) text-(--color-ink) dark:text-white transition-all cursor-pointer min-h-[36px] hover:bg-black/10 dark:hover:bg-white/10"
       >
         <div className="flex items-center gap-2 truncate pr-2">
           {Icon && <Icon size={14} className="shrink-0 text-(--color-muted) dark:text-(--color-muted-dark)" />}
@@ -36,14 +46,16 @@ export default function Select({ value, onChange, options, icon: Icon, className
 
       {isOpen && (
         <div className={`absolute z-50 mt-1 w-full min-w-[200px] right-0 rounded-xl bg-white dark:bg-(--color-surface-elevated-dark) border border-(--color-border) dark:border-white/10 shadow-xl dark:shadow-black/20 overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 ${dropdownClassName}`}>
-          <div className="max-h-60 overflow-y-auto p-1">
+          <div className="max-h-60 overflow-y-auto p-1" role="listbox" aria-label={ariaLabel}>
             {options.map((option) => (
               <button
                 key={option.value}
                 type="button"
+                role="option"
+                aria-selected={String(option.value) === String(value)}
                 onClick={() => {
                   onChange(option.value)
-                  setIsOpen(false)
+                  close()
                 }}
                 className={`w-full text-left flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                   String(option.value) === String(value)

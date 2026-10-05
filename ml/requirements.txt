@@ -1,0 +1,18 @@
+# Training / evaluation (B200: install the CUDA build of torch first, see README)
+torch>=2.4
+transformers>=4.45
+accelerate>=1.0       # load large models straight onto the GPU (hf teacher)
+datasets>=3.0
+scikit-learn>=1.5
+pandas>=2.2
+pyarrow>=16
+numpy>=1.26
+requests>=2.31
+python-dotenv>=1.0
+sentencepiece>=0.2      # DeBERTa-v3 tokenizer
+tokenizers>=0.20
+onnx>=1.16
+onnxruntime>=1.19
+pytest>=8.0
+# vLLM is NOT listed on purpose: run_b200.sh installs it in a separate .venv-teacher.
+# Installing it here replaces torch with a build your GPU driver may not support.

@@ -11,7 +11,6 @@ MIN_JWT_SECRET_LENGTH = 32
 
 def _load_jwt_secret() -> str:
     """Return JWT_SECRET from the environment, or raise RuntimeError so the app refuses to start."""
-    # TODO(human): read JWT_SECRET, reject it if missing or shorter than MIN_JWT_SECRET_LENGTH
     jwt_secret=os.environ.get("JWT_SECRET")
     if not jwt_secret:
         raise RuntimeError('JWT Secret is missing as Environment variable\nUse `python -c "import secrets; print(secrets.token_urlsafe(48))" to generate one')

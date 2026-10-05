@@ -4,10 +4,18 @@ import { MessageSquareText, Search, Sparkles, ShieldAlert } from "lucide-react"
 import Button from "../components/ui/Button"
 import Input from "../components/ui/Input"
 import Modal from "../components/ui/Modal"
+import AnimatedTabs from "../components/fx/AnimatedTabs"
 import Toast from "../components/ui/Toast"
 import Loader from "../components/ui/Loader"
-import { detectSpam } from "../data/spamFilter"
+import { isSpamReview } from "../services/reviewFilters"
 import { useProperty } from "../context/PropertyContext"
+
+// Where the draft came from (backend `source`), so a template is never mistaken for an AI reply
+const DRAFT_LABELS = {
+  llm: "AI draft: review it before sending",
+  template: "Template draft",
+  error: "No draft available: write your reply below",
+}
 
 export default function Reviews() {
   const { reviews, selectedPropertyId, unflagReview, deleteReview, loading, error, updateReviewResponse, generateReply } = useProperty()
@@ -17,11 +25,12 @@ export default function Reviews() {
     search: "",
     activeReviewForReply: null,
     draftReplyText: "",
+    draftSource: null, // "llm" | "template" | "error"
     isGeneratingReply: false,
     toastMessage: null
   })
 
-  const { activeTab, search, activeReviewForReply, draftReplyText, isGeneratingReply, toastMessage } = viewState
+  const { activeTab, search, activeReviewForReply, draftReplyText, draftSource, isGeneratingReply, toastMessage } = viewState
 
   useEffect(() => {
     if (error) {
@@ -49,17 +58,17 @@ export default function Reviews() {
 
   // Calculate dynamic stats
   const inboxCount = useMemo(() => {
-    return propertyReviews.filter((r) => !(detectSpam(r.text, r.guestName).isSpam && !r.isUnflagged)).length
+    return propertyReviews.filter((r) => !(isSpamReview(r))).length
   }, [propertyReviews])
 
   const spamCount = useMemo(() => {
-    return propertyReviews.filter((r) => detectSpam(r.text, r.guestName).isSpam && !r.isUnflagged).length
+    return propertyReviews.filter((r) => isSpamReview(r)).length
   }, [propertyReviews])
 
   const filtered = useMemo(() => {
     return propertyReviews.filter((r) => {
       // 1. Tab filter
-      const isSpam = detectSpam(r.text, r.guestName).isSpam && !r.isUnflagged
+      const isSpam = isSpamReview(r)
       if (activeTab === "inbox" && isSpam) return false
       if (activeTab === "spam" && !isSpam) return false
 
@@ -75,11 +84,11 @@ export default function Reviews() {
 
   // Count sentiments for valid reviews in current filter list
   const positive = useMemo(() => {
-    return filtered.filter((r) => r.sentiment === "positive" && !(detectSpam(r.text, r.guestName).isSpam && !r.isUnflagged)).length
+    return filtered.filter((r) => r.sentiment === "positive" && !(isSpamReview(r))).length
   }, [filtered])
 
   const negative = useMemo(() => {
-    return filtered.filter((r) => r.sentiment === "negative" && !(detectSpam(r.text, r.guestName).isSpam && !r.isUnflagged)).length
+    return filtered.filter((r) => r.sentiment === "negative" && !(isSpamReview(r))).length
   }, [filtered])
 
   if (loading) {
@@ -94,38 +103,27 @@ export default function Reviews() {
     setViewState(prev => ({
       ...prev,
       activeReviewForReply: review,
-      draftReplyText: "Generating response with Gemini AI...",
+      draftReplyText: "",
+      draftSource: null,
       isGeneratingReply: true
     }))
 
     try {
-      const realReply = await generateReply(review.id)
+      const { reply, source } = await generateReply(review.id)
       setViewState(prev => {
         if (prev.activeReviewForReply?.id !== review.id) return prev
-        return {
-          ...prev,
-          draftReplyText: realReply,
-          isGeneratingReply: false
-        }
+        return { ...prev, draftReplyText: reply, draftSource: source, isGeneratingReply: false }
       })
     } catch (err) {
-      console.warn("Real-time Gemini generation failed, falling back to local simulation:", err)
-      
-      let draft = ""
-      if (review.sentiment === "positive") {
-        draft = `Hi ${review.guestName}, thank you so much for your wonderful review of ${review.propertyName}! We are absolutely thrilled you enjoyed your stay and hope to welcome you back soon.`
-      } else if (review.sentiment === "negative") {
-        draft = `Hi ${review.guestName}, we are very sorry to hear that your stay at ${review.propertyName} did not meet expectations. We are looking into the heating/insulation issues you raised to ensure they are immediately resolved.`
-      } else {
-        draft = `Hi ${review.guestName}, thank you for sharing your experience at ${review.propertyName}. We appreciate your constructive feedback and will work on improving check-in and noise insulation as mentioned.`
-      }
-
+      // No invented fallback text: a canned reply could mention problems the guest never raised
       setViewState(prev => {
         if (prev.activeReviewForReply?.id !== review.id) return prev
         return {
           ...prev,
-          draftReplyText: draft,
-          isGeneratingReply: false
+          draftReplyText: "",
+          draftSource: "error",
+          isGeneratingReply: false,
+          toastMessage: { text: `Couldn't generate a draft (${err.message || "network error"}). You can write the reply yourself.`, type: "error" }
         }
       })
     }
@@ -137,7 +135,8 @@ export default function Reviews() {
       navigator.clipboard.writeText(draftReplyText).catch(() => {})
       setViewState(prev => ({
         ...prev,
-        toastMessage: { text: `Response sent to ${activeReviewForReply.guestName} and recorded in database!`, type: "success" },
+        // RevLens doesn't post to Airbnb/Booking.com: it saves the reply and copies it for the host to paste
+        toastMessage: { text: `Reply to ${activeReviewForReply.guestName} saved and copied. Paste it on the review platform.`, type: "success" },
         activeReviewForReply: null
       }))
     } catch (err) {
@@ -166,14 +165,14 @@ export default function Reviews() {
       <Modal
         isOpen={!!activeReviewForReply}
         onClose={() => setViewState(prev => ({ ...prev, activeReviewForReply: null }))}
-        title={activeReviewForReply ? `AI Response for ${activeReviewForReply.guestName}` : ""}
+        title={activeReviewForReply ? `Reply to ${activeReviewForReply.guestName}` : ""}
         footer={
           <>
             <Button variant="ghost" onClick={() => setViewState(prev => ({ ...prev, activeReviewForReply: null }))} disabled={isGeneratingReply}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleSendReply} disabled={isGeneratingReply}>
-              {isGeneratingReply ? "Generating..." : "Copy & Send Reply"}
+            <Button variant="primary" onClick={handleSendReply} disabled={isGeneratingReply || !draftReplyText.trim()}>
+              {isGeneratingReply ? "Generating..." : "Save & Copy Reply"}
             </Button>
           </>
         }
@@ -188,15 +187,21 @@ export default function Reviews() {
             </blockquote>
             
             <div className="flex items-center gap-1.5 mt-4">
-              <Sparkles size={14} className={`text-(--color-brand-500) ${isGeneratingReply ? "animate-spin" : "animate-pulse-soft"}`} />
-              <span className="text-xs font-semibold text-(--color-brand-600) dark:text-white">
-                {isGeneratingReply ? "Gemini AI is generating reply..." : "Recommended Draft response:"}
+              <Sparkles size={14} className={`text-(--color-brand-500) ${isGeneratingReply ? "animate-spin" : ""}`} />
+              <span className="text-xs font-semibold text-(--color-ink) dark:text-white">
+                {isGeneratingReply ? "Generating a draft..." : DRAFT_LABELS[draftSource] ?? "Draft:"}
               </span>
             </div>
-            
+            {draftSource === "template" && !isGeneratingReply && (
+              <p className="text-[11px] text-amber-700 dark:text-amber-400 -mt-2">
+                The AI was unavailable, so this is a generic template. Edit it to respond to what the guest actually said.
+              </p>
+            )}
+
             <textarea
-              aria-label="Recommended Draft Response Text"
-              className="w-full h-28 p-3.5 rounded-xl border border-(--color-border) dark:border-(--color-border-dark) bg-white dark:bg-(--color-surface-elevated-dark) text-xs outline-none focus:ring-2 focus:ring-(--color-brand-400)/20 focus:border-(--color-brand-400) transition-all resize-none text-(--color-brand-600) dark:text-white leading-relaxed"
+              aria-label="Reply text"
+              placeholder="Write your reply to the guest..."
+              className="w-full h-28 p-3.5 rounded-xl border border-(--color-border) dark:border-(--color-border-dark) bg-white dark:bg-(--color-surface-elevated-dark) text-xs outline-none focus:ring-2 focus:ring-(--color-brand-400)/20 focus:border-(--color-brand-400) transition-all resize-none text-(--color-ink) dark:text-white leading-relaxed"
               value={draftReplyText}
               disabled={isGeneratingReply}
               onChange={(e) => setViewState(prev => ({ ...prev, draftReplyText: e.target.value }))}
@@ -207,7 +212,7 @@ export default function Reviews() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-(--color-brand-600) dark:text-white">Reviews</h1>
+          <h1 className="font-heading text-2xl font-bold text-(--color-ink) dark:text-white">Reviews</h1>
           <p className="text-sm text-(--color-muted) dark:text-(--color-muted-dark) mt-1">Search and browse guest feedback</p>
         </div>
         <div className="flex items-center gap-4 text-xs text-(--color-muted) dark:text-(--color-muted-dark) widget-card px-3.5 py-2 rounded-xl">
@@ -226,34 +231,17 @@ export default function Reviews() {
       </div>
 
       {/* Tabs - Inbox vs Spam */}
-      <div className="flex border-b border-(--color-border) dark:border-(--color-border-dark) mb-6 gap-6 relative z-10">
-        <button
-          type="button"
-          onClick={() => setViewState(prev => ({ ...prev, activeTab: "inbox" }))}
-          className={`pb-3 text-sm font-semibold transition-all cursor-pointer relative ${
-            activeTab === "inbox"
-              ? "text-(--color-brand-600) dark:text-white border-b-2 border-(--color-brand-500)"
-              : "text-(--color-muted) dark:text-(--color-muted-dark) hover:text-(--color-brand-500)"
-          }`}
-        >
-          Inbox ({inboxCount})
-        </button>
-        <button
-          type="button"
-          onClick={() => setViewState(prev => ({ ...prev, activeTab: "spam" }))}
-          className={`pb-3 text-sm font-semibold transition-all cursor-pointer relative flex items-center gap-1.5 ${
-            activeTab === "spam"
-              ? "text-red-500 border-b-2 border-red-500"
-              : "text-(--color-muted) dark:text-(--color-muted-dark) hover:text-red-500"
-          }`}
-        >
-          Flagged Spam ({spamCount})
-          {spamCount > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full text-[9px] bg-red-500/10 text-red-500 font-bold border border-red-500/20 animate-pulse-soft">
-              {spamCount}
-            </span>
-          )}
-        </button>
+      <div className="mb-6 relative z-10">
+        <AnimatedTabs
+          label="Review folders"
+          idPrefix="reviews-tab"
+          value={activeTab}
+          onChange={(tab) => setViewState(prev => ({ ...prev, activeTab: tab }))}
+          tabs={[
+            { value: "inbox", label: `Inbox (${inboxCount})` },
+            { value: "spam", label: `Flagged Spam (${spamCount})` },
+          ]}
+        />
       </div>
 
       <div className="max-w-md mb-6">
@@ -266,6 +254,7 @@ export default function Reviews() {
         />
       </div>
 
+      <div role="tabpanel" id="reviews-panel" aria-labelledby={`reviews-tab-${activeTab}`}>
       {filtered.length === 0 ? (
         <div className="text-center py-20">
           <div className="w-12 h-12 rounded-xl bg-(--color-brand-100) dark:bg-(--color-brand-800) flex items-center justify-center mx-auto mb-4">
@@ -292,6 +281,7 @@ export default function Reviews() {
           ))}
         </div>
       )}
+      </div>
     </>
   )
 }

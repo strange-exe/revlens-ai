@@ -29,7 +29,9 @@
 
 ## Features
 
-- **Guest Review Sentiment Analysis**: Automatically classifies incoming reviews into `positive`, `neutral`, or `negative` categories using Google Gemini AI.
+- **Guest Review Sentiment Analysis**: Classifies incoming reviews as `positive`, `neutral` or `negative`, using a fine-tuned model when one is deployed, otherwise Google Gemini, otherwise a keyword fallback.
+- **Label Provenance**: Every label records who produced it (`model`, `llm`, `heuristic` or `human`) and the UI shows it, so a keyword guess is never presented as AI output.
+- **Aspect Themes**: Per-review sentiment for cleanliness, location, WiFi, host, value and amenities, aggregated in Analytics (only reviews the AI actually analysed are counted).
 - **Spam & Abuse Detection**: Audits review text for promotional links, repetitive spam patterns, or malicious content.
 - **AI-Powered Response Assistant**: Generates warm, professional, on-brand host replies in seconds with customizable tone rules.
 - **Property & Review Management (Full CRUD)**: Register homestay properties, add guest reviews, edit existing records, and flag/delete reviews.
@@ -49,13 +51,13 @@
 
 ### Backend
 - **Framework**: FastAPI (Python 3.12)
-- **ORM & Database Drivers**: SQLAlchemy & psycopg2-binary
+- **ORM, Migrations & Drivers**: SQLAlchemy, Alembic & psycopg 3
 - **Authentication**: PyJWT & Passlib (bcrypt)
 - **API Documentation**: OpenAPI / Swagger UI
 
 ### Database & AI Services
 - **Database**: PostgreSQL hosted on **Supabase**
-- **AI Model Integration**: Google Gemini API (`gemini-1.5-flash`) via HTTP REST requests with local fallback heuristics
+- **AI Model Integration**: Fine-tuned DeBERTa-v3 classifier served with ONNX Runtime (optional, see [`ml/`](ml/README.md)); Google Gemini API (`gemini-3.5-flash-lite`, configurable via `GEMINI_MODEL`) for reply drafts and classification fallback; keyword heuristics as the last resort
 
 ### Hosting & Deployment
 - **Frontend Hosting**: Vercel
@@ -161,18 +163,17 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `backend/.env`:
-```env
-DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT-ID].supabase.co:5432/postgres
-JWT_SECRET=your_super_secret_jwt_key_here
-ACCESS_TOKEN_EXPIRE_MINUTES=1440
-GEMINI_API_KEY=your_google_gemini_api_key_here
-```
+Edit `backend/.env` (all settings are documented in `.env.example`). Use Supabase's **Session pooler** URI:
+the direct `db.<ref>.supabase.co` host is IPv6-only. `JWT_SECRET` must be at least 32 characters,
+and the app refuses to start without it.
 
-Start the FastAPI backend:
+Create the schema, then start the FastAPI backend:
 ```bash
+alembic upgrade head
 uvicorn app.main:app --reload --port 8000
 ```
+
+Run the tests: `pip install -r requirements-dev.txt && pytest tests --ignore=tests/test_api.py`
 Backend API will run at `http://localhost:8000`. Access Swagger docs at `http://localhost:8000/docs`.
 
 ### 3. Frontend Setup
@@ -203,18 +204,23 @@ Frontend will load at `http://localhost:5173`.
 | `GET` | `/api/reviews` | List guest reviews (filterable by property & sentiment) | Yes |
 | `GET` | `/api/reviews/search` | Search review text, guest names, or properties | Yes |
 | `POST` | `/api/reviews` | Submit a new guest review | Yes |
-| `POST` | `/api/reviews/{id}/generate-reply` | Generate AI host response via Gemini API | Yes |
+| `POST` | `/api/reviews/{id}/generate-reply` | Generate a host reply draft (`source`: `llm` or `template`) | Yes |
+| `POST` | `/api/ai/analyze-review` | Classify arbitrary text and draft a reply, reporting which model answered | Yes |
+| `POST` | `/api/ai/ask` | AI Assistant: answers a question from your own reviews only, citing the review ids used | Yes |
+| `GET` | `/api/ai/status` | Which engine is answering now (`model` / `llm` / `heuristic`), for the fallback notice | Yes |
 | `PUT` | `/api/reviews/{id}` | Update review content | Yes |
 | `PATCH` | `/api/reviews/{id}/flag` | Flag or unflag review as spam | Yes |
 | `DELETE` | `/api/reviews/{id}` | Delete a review | Yes |
 | `GET` | `/api/reviews/sentiment-summary` | Aggregated positive/neutral/negative counts | Yes |
+| `GET`/`HEAD` | `/health` | Health check for uptime monitors | No |
 
 ---
 
 ## Known Limitations & Deployment Notes
 
 - **Render Free Tier Cold Start**: The backend hosted on Render's free web service spins down after 15 minutes of inactivity. Initial requests after idle may take 30–50 seconds to wake up the server.
-- **Gemini API Quota**: Free tier Gemini API rate limits permit up to 15 requests per minute. If exceeded, RevLens AI automatically falls back to built-in rule-based sentiment and mock response engines to ensure uninterrupted service.
+- **Gemini API Quota**: The free tier is rate-limited. When Gemini is unavailable, RevLens falls back to keyword rules and template replies, and labels them as such (`heuristic` / `template`) instead of presenting them as AI output.
+- **Model evaluation**: The fine-tuned classifier is trained and measured on public TripAdvisor hotel reviews (academic use only, see [`ml/DATASETS.md`](ml/DATASETS.md)); expect some domain shift on Indian homestay reviews.
 
 ---
 

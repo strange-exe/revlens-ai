@@ -1,9 +1,2 @@
-import { useRef, useCallback } from "react"
-
-export function useEffectEvent(callback) {
-  const ref = useRef(callback)
-  ref.current = callback
-  return useCallback((...args) => {
-    return ref.current?.(...args)
-  }, [])
-}
+// React 19.2 ships useEffectEvent; the old hand-rolled version wrote a ref during render
+export { useEffectEvent } from "react"

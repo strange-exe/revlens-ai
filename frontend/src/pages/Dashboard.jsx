@@ -1,105 +1,90 @@
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { Link } from "react-router-dom"
 import ReviewCard from "../components/ReviewCard"
 import Loader from "../components/ui/Loader"
 import Toast from "../components/ui/Toast"
-import { MessageSquareText, Building2, Star, TrendingUp, ArrowUpRight, Sparkles, Hash, Activity, ShieldAlert } from "lucide-react"
-import { detectSpam } from "../data/spamFilter"
+import Select from "../components/ui/Select"
+import CardSpotlight from "../components/fx/CardSpotlight"
+import { MessageSquareText, Building2, Star, TrendingUp, ArrowUpRight, ArrowDownRight, Sparkles, Hash, Activity, ShieldAlert, CalendarDays } from "lucide-react"
+import { isSpamReview } from "../services/reviewFilters"
+import { PERIODS, aspectInsights, delta, inWindow, periodStats, spamSummary } from "../services/reviewMetrics"
 import { useProperty } from "../context/PropertyContext"
+import { useDismissibleError } from "../hooks/useDismissibleError"
 
 const accentMap = {
   brand: {
-    gradient: "from-(--color-brand-400) to-(--color-brand-600)",
     badge: "bg-(--color-brand-100) text-(--color-brand-700) dark:bg-(--color-brand-800) dark:text-(--color-brand-300)",
     icon: "bg-(--color-brand-100) text-(--color-brand-600) dark:bg-(--color-brand-800) dark:text-(--color-brand-300)",
     light: "bg-(--color-brand-50)",
   },
   violet: {
-    gradient: "from-violet-400 to-violet-600",
     badge: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400",
     icon: "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",
     light: "bg-violet-50",
   },
   accent: {
-    gradient: "from-(--color-accent-400) to-(--color-accent-600)",
-    badge: "bg-(--color-accent-500)/10 text-(--color-accent-600) dark:bg-(--color-accent-500)/20 dark:text-(--color-accent-400)",
-    icon: "bg-(--color-accent-500)/10 text-(--color-accent-600) dark:bg-(--color-accent-500)/20 dark:text-(--color-accent-400)",
+    badge: "bg-(--color-accent-500)/10 text-(--color-accent-700) dark:bg-(--color-accent-500)/20 dark:text-(--color-accent-400)",
+    icon: "bg-(--color-accent-500)/10 text-(--color-accent-700) dark:bg-(--color-accent-500)/20 dark:text-(--color-accent-400)",
     light: "bg-(--color-accent-500)/5",
   },
   emerald: {
-    gradient: "from-emerald-400 to-emerald-600",
     badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
-    icon: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
+    icon: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
     light: "bg-emerald-50",
   },
 }
 
+// Who flagged a spam review (backend `label_source`), in words a host understands
+const SOURCE_NAMES = { model: "AI model", llm: "AI", heuristic: "keyword rule", human: "you", unknown: "earlier version" }
+
+function formatDelta(value, kind) {
+  if (value == null) return null
+  const sign = value > 0 ? "+" : ""
+  if (kind === "count") return `${sign}${value}`
+  if (kind === "rating") return `${sign}${value.toFixed(1)}`
+  return `${sign}${Math.round(value * 100)} pts` // rates change in percentage points
+}
+
 export default function Dashboard() {
   const { reviews, properties, selectedPropertyId, loading, error } = useProperty()
-  const [toastMessage, setToastMessage] = useState(null)
+  const [toastMessage, dismissToast] = useDismissibleError(error)
+  const [periodKey, setPeriodKey] = useState("all")
+  const period = PERIODS.find((p) => p.key === periodKey)
+  // Fixed at page load so the numbers don't shift between renders
+  const [now] = useState(() => Date.now())
 
-  useEffect(() => {
-    if (error) {
-      setToastMessage(error)
-    }
-  }, [error])
+
+  const propertyReviews = useMemo(() => (selectedPropertyId === "all"
+    ? reviews
+    : reviews.filter(r => r.propertyId === parseInt(selectedPropertyId))), [reviews, selectedPropertyId])
 
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-        <Loader size="lg" text="Analyzing latest reviews..." />
+        <Loader size="lg" text="Loading your reviews..." />
       </div>
     )
   }
 
-  // Filter reviews by selected property
-  const propertyReviews = selectedPropertyId === "all"
-    ? reviews
-    : reviews.filter(r => r.propertyId === parseInt(selectedPropertyId))
+  const periodReviews = inWindow(propertyReviews, period.days, now)
+  const stats = periodStats(propertyReviews, period, now)
+  const { current } = stats
+  const insights = aspectInsights(periodReviews)
+  const spam = spamSummary(periodReviews)
 
-  // Exclude spam reviews from metrics calculations
-  const validReviews = propertyReviews.filter(r => !detectSpam(r.text, r.guestName).isSpam)
-  const spamCount = propertyReviews.filter(r => detectSpam(r.text, r.guestName).isSpam).length
-
-  const totalValidReviews = validReviews.length
-  const avgRating = totalValidReviews > 0
-    ? (validReviews.reduce((s, r) => s + r.rating, 0) / totalValidReviews).toFixed(1)
-    : "0.0"
-  const positiveCount = validReviews.filter((r) => r.sentiment === "positive").length
-  const positiveRate = totalValidReviews > 0
-    ? `${Math.round((positiveCount / totalValidReviews) * 100)}%`
-    : "0%"
-
-  const stats = [
-    {
-      label: "Total Reviews",
-      value: totalValidReviews,
-      icon: <MessageSquareText size={18} />,
-      accent: "brand",
-      change: "+12%",
-    },
-    {
-      label: "Properties",
-      value: properties.length,
-      icon: <Building2 size={18} />,
-      accent: "violet",
-      change: "+1",
-    },
-    {
-      label: "Avg Rating",
-      value: avgRating,
-      icon: <Star size={18} />,
-      accent: "accent",
-      change: "+0.3",
-    },
-    {
-      label: "Positive Rate",
-      value: positiveRate,
-      icon: <TrendingUp size={18} />,
-      accent: "emerald",
-      change: "+5%",
-    },
+  const comparison = period.days ? `vs previous ${period.days} days` : null
+  const cards = [
+    { label: "Total Reviews", value: current.total, icon: <MessageSquareText size={18} />, accent: "brand",
+      change: formatDelta(delta(stats, "total"), "count") },
+    { label: "Properties", value: properties.length, icon: <Building2 size={18} />, accent: "violet", change: null },
+    { label: "Avg Rating", value: current.avgRating?.toFixed(1) ?? "n/a", icon: <Star size={18} />, accent: "accent",
+      change: formatDelta(delta(stats, "avgRating"), "rating") },
+    { label: "Positive Rate", value: current.positiveRate == null ? "n/a" : `${Math.round(current.positiveRate * 100)}%`,
+      icon: <TrendingUp size={18} />, accent: "emerald", change: formatDelta(delta(stats, "positiveRate"), "rate") },
   ]
+  const recent = periodReviews.filter((r) => !isSpamReview(r)).sort((a, b) => b.date.localeCompare(a.date))
+  const responsePct = current.responseRate == null ? null : Math.round(current.responseRate * 100)
+  const spamSources = Object.entries(spam.bySource).map(([src, n]) => `${SOURCE_NAMES[src] ?? src} (${n})`).join(", ")
 
   return (
     <>
@@ -108,116 +93,140 @@ export default function Dashboard() {
           <Toast
             message={`Error loading dashboard: ${toastMessage}`}
             type="error"
-            onClose={() => setToastMessage(null)}
+            onClose={dismissToast}
           />
         </div>
       )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-(--color-brand-600) dark:text-white">Overview</h1>
+          <h1 className="font-heading text-2xl font-bold text-(--color-ink) dark:text-white">Overview</h1>
           <p className="text-sm text-(--color-muted) dark:text-(--color-muted-dark) mt-1">Your review performance at a glance</p>
         </div>
-        <span className="text-xs font-semibold text-(--color-brand-600) dark:text-brand-300 bg-(--color-brand-100) dark:bg-(--color-brand-800) px-3.5 py-1.5 rounded-lg border border-(--color-brand-200) dark:border-(--color-brand-700) shadow-sm w-fit">
-          Last 30 days
-        </span>
+        <Select
+          value={periodKey}
+          onChange={setPeriodKey}
+          options={PERIODS.map((p) => ({ value: p.key, label: p.label }))}
+          icon={CalendarDays}
+          ariaLabel="Time period"
+          className="w-full sm:w-48"
+        />
       </div>
 
-      {/* Spam & Fake Review Alert Notice */}
-      {spamCount > 0 && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 mb-6 rounded-2xl border border-red-500/20 bg-red-500/5 dark:bg-red-950/5 text-red-600 dark:text-red-400 relative z-10 animate-fade-in">
+      {/* Spam notice: says who flagged the reviews instead of assuming "AI" */}
+      {spam.count > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 mb-6 rounded-xl border border-(--color-border) dark:border-(--color-border-dark) border-l-4 border-l-amber-500 bg-(--color-surface-elevated) dark:bg-(--color-surface-elevated-dark) relative z-10">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-red-500/10 text-red-500">
-              <ShieldAlert size={18} />
-            </div>
+            <ShieldAlert size={18} aria-hidden="true" className="shrink-0 text-amber-600 dark:text-amber-400" />
             <div>
-              <h4 className="text-sm font-bold">Suspicious Activity Blocked</h4>
-              <p className="text-xs opacity-85 mt-0.5">AI detected {spamCount} fake/spam reviews generated by bots.</p>
+              <h4 className="text-sm font-semibold text-(--color-ink) dark:text-white">{spam.count} {spam.count === 1 ? "review" : "reviews"} flagged as spam</h4>
+              <p className="text-xs text-(--color-muted) dark:text-(--color-muted-dark) mt-0.5">Held back from your stats. Flagged by {spamSources}.</p>
             </div>
           </div>
           <Link
             to="/dashboard/reviews"
-            className="px-4 py-2 text-xs font-bold rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 hover:border-red-500/30 transition-all text-center cursor-pointer active:scale-95"
+            className="text-sm font-semibold text-(--color-brand-600) dark:text-(--color-brand-300) underline underline-offset-4 decoration-(--color-brand-600)/30 hover:decoration-current whitespace-nowrap"
           >
-            Review Flagged Items
+            Review flagged reviews
           </Link>
         </div>
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        {stats.map((s) => {
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10">
+        {cards.map((s) => {
           const a = accentMap[s.accent]
+          const down = s.change?.startsWith("-")
           return (
-            <div
+            <CardSpotlight
               key={s.label}
-              className="group relative rounded-2xl widget-card p-5 hover:-translate-y-1 overflow-hidden"
+              className="group rounded-2xl widget-card p-4 sm:p-5 hover:-translate-y-1 overflow-hidden"
             >
-              <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${a.gradient} opacity-70 group-hover:opacity-100 transition-opacity`} />
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-2.5 rounded-xl ${a.icon} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-4deg]`}>
                   {s.icon}
                 </div>
-                <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${a.badge} shadow-sm`}>
-                  <ArrowUpRight size={10} />
-                  {s.change}
-                </span>
+                {s.change && (
+                  <span title={comparison} className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${a.badge} shadow-sm`}>
+                    {down ? <ArrowDownRight size={10} /> : <ArrowUpRight size={10} />}
+                    {s.change}
+                  </span>
+                )}
               </div>
-              <p className="font-heading text-3xl font-bold text-(--color-brand-600) dark:text-white leading-none tracking-tight">{s.value}</p>
-              <p className="text-xs text-(--color-muted) dark:text-(--color-muted-dark) mt-1.5 font-medium">{s.label}</p>
-            </div>
+              <p className="font-heading text-2xl sm:text-3xl font-bold text-(--color-ink) dark:text-white leading-none tracking-tight">{s.value}</p>
+              <p className="text-xs text-(--color-muted) dark:text-(--color-muted-dark) mt-1.5 font-medium">
+                {s.label}{s.change && comparison ? <span className="opacity-70"> · {comparison}</span> : null}
+              </p>
+            </CardSpotlight>
           )
         })}
       </div>
 
-      {/* Quick Insights Row */}
+      {/* Insights: stored AI aspect labels and real reply data */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-10">
-        <div className="relative rounded-2xl bg-gradient-to-br from-(--color-brand-600) to-(--color-brand-900) p-6 text-white overflow-hidden shadow-xl shadow-black/15">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-(--color-accent-400)/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-xl" />
+        <div className="relative rounded-2xl bg-(--color-ink) dark:bg-white/[0.06] dark:ring-1 dark:ring-white/10 p-6 text-white overflow-hidden">
           <div className="relative">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles size={14} className="text-(--color-accent-400)" />
-              <p className="text-[10px] font-bold uppercase tracking-wider text-white/50">AI Insight</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-white/60">AI Insight</p>
             </div>
-            <p className="text-sm font-medium leading-relaxed text-white/85">
-              Your <span className="font-bold text-(--color-accent-400)">WiFi speed</span> was mentioned in 4 recent reviews. Consider upgrading your internet plan.
+            <p className="text-sm font-medium leading-relaxed text-white/90">
+              {insights.analysed === 0
+                ? "No reviews in this period have been analysed by the AI yet."
+                : insights.topIssue
+                  ? <>Guests criticised <span className="font-bold text-(--color-accent-400)">{insights.topIssue.label}</span> in {insights.topIssue.negative} of {insights.analysed} analysed reviews.</>
+                  : <>No recurring complaints across {insights.analysed} analysed reviews.</>}
             </p>
+            <p className="text-[10px] text-white/60 mt-3">Based on {insights.analysed} of {current.total} reviews analysed by AI</p>
           </div>
         </div>
-        <div className="rounded-2xl widget-card p-6">
+        <CardSpotlight className="rounded-2xl widget-card p-6">
           <div className="flex items-center gap-2 mb-3">
             <Hash size={14} className="text-(--color-muted) dark:text-(--color-muted-dark)" />
             <p className="text-[10px] font-bold uppercase tracking-wider text-(--color-muted) dark:text-(--color-muted-dark)">Top Theme</p>
           </div>
-          <p className="font-heading text-xl font-bold text-(--color-brand-600) dark:text-white tracking-tight">&ldquo;Cleanliness&rdquo;</p>
-          <p className="text-xs text-(--color-muted) dark:text-(--color-muted-dark) mt-1.5">Mentioned in 68% of positive reviews</p>
-        </div>
-        <div className="rounded-2xl widget-card p-6">
+          {insights.topTheme ? (
+            <>
+              <p className="font-heading text-xl font-bold text-(--color-ink) dark:text-white tracking-tight">&ldquo;{insights.topTheme.label}&rdquo;</p>
+              <p className="text-xs text-(--color-muted) dark:text-(--color-muted-dark) mt-1.5">
+                Mentioned in {insights.topTheme.mentions} of {insights.analysed} analysed reviews · {insights.topTheme.positive} positive, {insights.topTheme.negative} negative
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-(--color-muted) dark:text-(--color-muted-dark)">No themes detected yet.</p>
+          )}
+        </CardSpotlight>
+        <CardSpotlight className="rounded-2xl widget-card p-6">
           <div className="flex items-center gap-2 mb-3">
             <Activity size={14} className="text-(--color-muted) dark:text-(--color-muted-dark)" />
             <p className="text-[10px] font-bold uppercase tracking-wider text-(--color-muted) dark:text-(--color-muted-dark)">Response Rate</p>
           </div>
           <div className="flex items-baseline gap-2.5 mb-3">
-            <p className="font-heading text-xl font-bold text-(--color-brand-600) dark:text-white tracking-tight">72%</p>
-            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 rounded">+8% this week</span>
+            <p className="font-heading text-xl font-bold text-(--color-ink) dark:text-white tracking-tight">{responsePct == null ? "n/a" : `${responsePct}%`}</p>
+            <span className="text-[10px] font-semibold text-(--color-muted) dark:text-(--color-muted-dark)">{current.replied} of {current.total} replied</span>
           </div>
-          <div className="h-2 rounded-full bg-(--color-border) dark:bg-(--color-border-dark) overflow-hidden">
-            <div className="h-full rounded-full bg-gradient-to-r from-(--color-brand-400) to-(--color-brand-500) w-[72%] shadow-sm shadow-(--color-brand-400)/20" />
+          <div className="h-2 rounded-full bg-(--color-border) dark:bg-(--color-border-dark) overflow-hidden" role="progressbar" aria-label="Response rate" aria-valuenow={responsePct ?? 0} aria-valuemin={0} aria-valuemax={100}>
+            <div className="h-full rounded-full bg-(--color-brand-500)" style={{ width: `${responsePct ?? 0}%` }} />
           </div>
-        </div>
+        </CardSpotlight>
       </div>
 
-      {/* Recent Reviews (Valid Inbox Only) */}
+      {/* Recent Reviews (valid inbox only, newest first) */}
       <div>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-heading text-lg font-bold text-(--color-brand-600) dark:text-white">Recent Reviews</h2>
-          <span className="text-xs font-medium text-(--color-muted) dark:text-(--color-muted-dark) bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark) px-3 py-1.5 rounded-lg">Latest 4 of {validReviews.length}</span>
+          <h2 className="font-heading text-lg font-bold text-(--color-ink) dark:text-white">Recent Reviews</h2>
+          <span className="text-xs font-medium text-(--color-muted) dark:text-(--color-muted-dark) bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark) px-3 py-1.5 rounded-lg">Latest {Math.min(4, recent.length)} of {recent.length}</span>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {validReviews.slice(0, 4).map((r) => (
-            <ReviewCard key={r.id} review={r} />
-          ))}
-        </div>
+        {recent.length === 0 ? (
+          <p className="text-sm text-(--color-muted) dark:text-(--color-muted-dark) rounded-2xl widget-card p-6 text-center">
+            No reviews in this period. Try a longer period above.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {recent.slice(0, 4).map((r) => (
+              <ReviewCard key={r.id} review={r} />
+            ))}
+          </div>
+        )}
       </div>
     </>
   )

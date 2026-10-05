@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from app import ai, auth, database
 from app.main import app
 
-FAKE_KEY = "AIza-test-key-0000"
+from conftest import FAKE_KEY
 
 
 # ── 0.1 JWT secret ───────────────────────────────────────────────────────
@@ -35,35 +35,6 @@ def test_old_public_default_is_gone():
 
 
 # ── 0.2 / 0.3 Gemini calls ───────────────────────────────────────────────
-
-class FakeResponse:
-    def __init__(self, text):
-        self._body = {"candidates": [{"content": {"parts": [{"text": text}]}}]}
-
-    def raise_for_status(self):
-        pass
-
-    def json(self):
-        return self._body
-
-
-class Calls(list):
-    """Recorded requests, plus `reply`: the text the fake model returns."""
-    reply = json.dumps({"sentiment": "negative", "is_spam": False})
-
-
-@pytest.fixture
-def gemini(monkeypatch):
-    monkeypatch.setattr(ai, "GEMINI_API_KEY", FAKE_KEY)
-    calls = Calls()
-
-    def fake_post(url, json=None, headers=None, timeout=None):
-        calls.append({"url": url, "json": json, "headers": headers or {}})
-        return FakeResponse(calls.reply)
-
-    monkeypatch.setattr(ai.requests, "post", fake_post)
-    return calls
-
 
 def test_api_key_sent_in_header_not_url(gemini):
     ai.analyze_review_sentiment_and_spam("Lovely stay", "Asha")
@@ -112,7 +83,8 @@ def test_structured_output_schema_requested(gemini):
 def test_invalid_model_output_falls_back_to_heuristic(gemini, bad_reply):
     gemini.reply = bad_reply
     # Heuristic says negative + not spam; a trusted bad reply would have said otherwise
-    assert ai.analyze_review_sentiment_and_spam("terrible and dirty", "Asha") == ("negative", False)
+    result = ai.analyze_review_sentiment_and_spam("terrible and dirty", "Asha")
+    assert (result.sentiment, result.is_spam, result.source) == ("negative", False, "heuristic")
 
 
 # ── 0.4 Database ─────────────────────────────────────────────────────────
@@ -161,3 +133,10 @@ def test_cors_rejects_other_origins():
 def test_health_check_answers_uptime_monitors(method):
     res = TestClient(app).request(method, "/health", headers={"Origin": "https://uptimerobot.com"})
     assert res.status_code == 200
+
+
+def test_auth_endpoints_are_rate_limited():
+    client = TestClient(app)
+    body = {"email": "nobody@example.com", "password": "wrong-password"}
+    codes = [client.post("/api/auth/login", json=body).status_code for _ in range(6)]
+    assert codes[:5] == [401] * 5 and codes[5] == 429, codes

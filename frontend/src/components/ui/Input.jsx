@@ -50,7 +50,7 @@ export default function Input({
           id={inputId}
           type={type}
           className={`
-            px-4 py-3 rounded-xl text-sm border bg-white dark:bg-(--color-surface-elevated-dark) text-(--color-brand-600) dark:text-white transition-all duration-200 outline-none
+            px-4 py-3 rounded-xl text-sm border bg-white dark:bg-(--color-surface-elevated-dark) text-(--color-ink) dark:text-white transition-all duration-200 outline-none
             ${icon ? "pl-11" : ""}
             ${fullWidth ? "w-full" : "w-full sm:w-80"}
             ${error 

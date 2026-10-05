@@ -6,6 +6,7 @@ import { Menu, Home as HomeIcon, LogOut } from "lucide-react"
 import { useProperty } from "../context/PropertyContext"
 import { useAuth } from "../context/AuthContext"
 import Select from "./ui/Select"
+import AiStatusBanner from "./AiStatusBanner"
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -36,11 +37,12 @@ export default function DashboardLayout() {
             >
               <Menu size={20} />
             </button>
-            <h2 className="font-heading text-base font-bold text-(--color-brand-600) dark:text-white hidden sm:block">Dashboard</h2>
+            <h2 className="font-heading text-base font-bold text-(--color-ink) dark:text-white hidden sm:block">Dashboard</h2>
             <span className="hidden sm:inline text-(--color-border) dark:text-(--color-border-dark) font-light">|</span>
             <div className="relative flex items-center">
               <Select
                 icon={HomeIcon}
+                ariaLabel="Property"
                 value={selectedPropertyId}
                 onChange={setSelectedPropertyId}
                 options={[
@@ -65,7 +67,7 @@ export default function DashboardLayout() {
                     {(user.fullName || user.email || "?").charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="hidden lg:inline text-xs font-semibold text-(--color-brand-600) dark:text-white">
+                <span className="hidden lg:inline text-xs font-semibold text-(--color-ink) dark:text-white">
                   {user.fullName || user.email.split("@")[0]}
                 </span>
               </div>
@@ -88,7 +90,7 @@ export default function DashboardLayout() {
             <button
               type="button"
               onClick={logout}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 dark:border-red-500/30 hover:bg-red-500/20 transition-all cursor-pointer"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/20 dark:border-red-500/30 hover:bg-red-500/20 transition-all cursor-pointer"
             >
               <LogOut size={13} />
               Logout
@@ -97,6 +99,7 @@ export default function DashboardLayout() {
           </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <AiStatusBanner />
           <Outlet />
         </main>
       </div>

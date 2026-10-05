@@ -1,20 +1,24 @@
-import { useEffect } from "react"
+import { lazy, Suspense, useEffect } from "react"
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
 import { ThemeProvider } from "./context/ThemeContext"
 import { AuthProvider } from "./context/AuthContext"
 import { PropertyProvider } from "./context/PropertyContext"
 import ProtectedRoute from "./components/ProtectedRoute"
 import Layout from "./components/Layout"
-import DashboardLayout from "./components/DashboardLayout"
+import Loader from "./components/ui/Loader"
 import Home from "./pages/Home"
-import Dashboard from "./pages/Dashboard"
-import Reviews from "./pages/Reviews"
-import Analytics from "./pages/Analytics"
-import About from "./pages/About"
-import Login from "./pages/Login"
-import Pricing from "./pages/Pricing"
-import Assistant from "./pages/Assistant"
-import Properties from "./pages/Properties"
+
+// The landing page ships in the main bundle (first paint); every other route is its own chunk,
+// so visitors don't download the dashboard and hosts don't download the marketing pages.
+const DashboardLayout = lazy(() => import("./components/DashboardLayout"))
+const Dashboard = lazy(() => import("./pages/Dashboard"))
+const Reviews = lazy(() => import("./pages/Reviews"))
+const Analytics = lazy(() => import("./pages/Analytics"))
+const About = lazy(() => import("./pages/About"))
+const Login = lazy(() => import("./pages/Login"))
+const Pricing = lazy(() => import("./pages/Pricing"))
+const Assistant = lazy(() => import("./pages/Assistant"))
+const Properties = lazy(() => import("./pages/Properties"))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -33,6 +37,7 @@ export default function App() {
         <PropertyProvider>
           <BrowserRouter>
             <ScrollToTop />
+            <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><Loader size="md" /></div>}>
             <Routes>
               <Route element={<Layout />}>
                 <Route index element={<Home />} />
@@ -52,6 +57,7 @@ export default function App() {
                 </Route>
               </Route>
             </Routes>
+            </Suspense>
           </BrowserRouter>
         </PropertyProvider>
       </AuthProvider>

@@ -12,7 +12,7 @@
   --color-brand-200: #ddd6fe;
   --color-brand-300: #c4b5fd;
   --color-brand-400: #a78bfa;
-  --color-brand-500: #8b5cf6;
+  --color-brand-500: #7f4cf0; /* was #8b5cf6: white text on it was 4.2:1 */
   --color-brand-600: #7c3aed;
   --color-brand-700: #6d28d9;
   --color-brand-800: #5b21b6;
@@ -32,15 +32,17 @@
 
   /* ── Accent (Cyan) ── */
   --color-accent-400: #22d3ee;
+  --color-accent-700: #0e7490; /* light-mode accent text */
   --color-accent-500: #06b6d4;
   --color-accent-600: #0891b2;
 
   /* ── Surfaces (Light) ── */
-  --color-surface:              #fafafa;
+  --color-surface:              #f7f6f2; /* warm paper, not grey */
   --color-surface-elevated:     #ffffff;
   --color-surface-muted:        #f4f4f5;
   --color-border:               #e4e4e7;
-  --color-muted:                #71717a;
+  --color-muted:                #65656e; /* was #71717a: 4.4:1 on cards */
+  --color-ink:                  #19171f; /* primary text: violet is reserved for actions */
 
   /* ── Surfaces (Dark Obsidian) ── */
   --color-surface-dark:              #000000;
@@ -335,17 +337,6 @@ h1, h2, h3, h4, h5, h6 {
   width: 80px;
 }
 
-/* ── Reveal wrapper for scroll-triggered animations ── */
-.reveal {
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 /* ── UI Keyframes and Animations ── */
 @keyframes slide-in {
   from {
@@ -369,3 +360,38 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+
+/* ── FX: motion-free port of Aceternity UI card spotlight (CSS only, used by the dashboard) ── */
+
+/* Card spotlight: radial glow that follows the pointer (position set via --fx-x / --fx-y) */
+.fx-card-spotlight { position: relative; isolation: isolate; }
+.fx-card-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(260px circle at var(--fx-x, 50%) var(--fx-y, 50%),
+    color-mix(in oklab, var(--color-brand-400) 14%, transparent), transparent 70%);
+}
+.fx-card-spotlight:hover::before { opacity: 1; }
+
+/* ── Reduced motion: respect the OS setting everywhere ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Annotation marks: the RevLens motif. Review text is highlighted the way the AI reads it. ── */
+.mark { padding: 0.05em 0.15em; margin: 0 -0.1em; border-radius: 0.2em; box-decoration-break: clone; -webkit-box-decoration-break: clone; color: inherit; }
+.mark-pos { background: rgb(16 185 129 / 0.18); box-shadow: inset 0 -0.14em 0 rgb(5 150 105 / 0.55); }
+.mark-neg { background: rgb(244 63 94 / 0.16); box-shadow: inset 0 -0.14em 0 rgb(225 29 72 / 0.55); }
+.dark .mark-pos { background: rgb(16 185 129 / 0.22); }
+.dark .mark-neg { background: rgb(244 63 94 / 0.22); }

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, Text
+from sqlalchemy import Column, Integer, String, Float, Boolean, Text, JSON
 from .database import Base
 
 
@@ -19,7 +19,7 @@ class Property(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     location = Column(String, nullable=False)
-    price = Column(String, default="₹5,000/night")
+    price = Column(String, nullable=True)  # only what the host entered
     distance = Column(String, nullable=True)
     rating = Column(Float, default=0.0)
     reviews_count = Column(Integer, default=0)
@@ -42,3 +42,7 @@ class Review(Base):
     is_spam = Column(Boolean, default=False)
     is_unflagged = Column(Boolean, default=False)
     response = Column(Text, nullable=True)
+    # Who produced sentiment/is_spam: "llm" | "heuristic" | "human" | "model". NULL = before tracking existed.
+    label_source = Column(String, nullable=True)
+    # {aspect: "positive" | "negative"} for aspects the review mentions. NULL = not analysed by the LLM.
+    aspects = Column(JSON, nullable=True)

@@ -38,8 +38,8 @@ def get_review(db: Session, review_id: int):
     return db.query(models.Review).filter(models.Review.id == review_id).first()
 
 
-def create_review(db: Session, review: schemas.ReviewCreate):
-    db_review = models.Review(**review.model_dump())
+def create_review(db: Session, review: schemas.ReviewCreate, label_source: str, aspects: dict | None = None):
+    db_review = models.Review(**review.model_dump(), label_source=label_source, aspects=aspects)
     db.add(db_review)
     db.commit()
     db.refresh(db_review)
@@ -50,8 +50,11 @@ def update_review(db: Session, review_id: int, review: schemas.ReviewUpdate):
     db_review = get_review(db, review_id)
     if not db_review:
         return None
-    for field, value in review.model_dump(exclude_unset=True).items():
+    changes = review.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         setattr(db_review, field, value)
+    if {"sentiment", "is_spam"} & changes.keys():
+        db_review.label_source = "human"
     db.commit()
     db.refresh(db_review)
     return db_review
@@ -65,6 +68,8 @@ def flag_review(db: Session, review_id: int, is_spam=None, is_unflagged=None):
         db_review.is_spam = is_spam
     if is_unflagged is not None:
         db_review.is_unflagged = is_unflagged
+    if is_spam is not None or is_unflagged is not None:
+        db_review.label_source = "human"
     db.commit()
     db.refresh(db_review)
     return db_review
@@ -204,6 +209,7 @@ def seed_database(db: Session):
             source=r_data["source"],
             is_unflagged=False,
             is_spam=r_data.get("is_spam", False),
+            label_source="human",  # hand-written demo labels
         )
         db.add(db_review)
 

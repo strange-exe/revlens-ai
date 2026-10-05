@@ -60,6 +60,8 @@ function normalizeReview(r) {
     isSpam: r.is_spam ?? false,
     isUnflagged: r.is_unflagged ?? false,
     response: r.response ?? null,
+    labelSource: r.label_source ?? null,
+    aspects: r.aspects ?? null,
   }
 }
 
@@ -144,7 +146,7 @@ export const api = {
     const body = {
       name: prop.name,
       location: prop.location,
-      price: prop.price || "₹5,000/night",
+      price: prop.price || null, // never invent a price
       distance: prop.distance || null,
       is_user_property: prop.isUserProperty !== false,
       user_id: prop.userId || null,
@@ -188,7 +190,8 @@ export const api = {
     const data = await request(`/reviews/${id}/generate-reply`, {
       method: 'POST',
     })
-    return data.reply
+    // source: "llm" (AI-written) or "template" (AI unavailable)
+    return { reply: data.reply, source: data.source ?? "unknown" }
   },
 
   async updateReview(id, updates) {
@@ -234,5 +237,18 @@ export const api = {
       ? `/reviews/sentiment-summary?property_id=${propertyId}` 
       : '/reviews/sentiment-summary'
     return request(path)
+  },
+
+  /** { classifier: "model"|"llm"|"heuristic", classifier_name, replies: "llm"|"template" } */
+  async getAiStatus() {
+    return request('/ai/status')
+  },
+
+  /** Ask a question about your reviews. -> { answer, citations: [review ids], source: "llm"|"unavailable" } */
+  async askAssistant(question, propertyId) {
+    return request('/ai/ask', {
+      method: 'POST',
+      body: JSON.stringify({ question, property_id: propertyId && propertyId !== 'all' ? Number(propertyId) : null }),
+    })
   }
 }

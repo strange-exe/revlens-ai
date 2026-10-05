@@ -83,7 +83,7 @@ export default function Modal({
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4.5 border-b border-(--color-border)/60 dark:border-(--color-border-dark)/60">
           {title ? (
-            <h3 className="font-heading text-lg font-bold text-(--color-brand-600) dark:text-white leading-none">
+            <h3 className="font-heading text-lg font-bold text-(--color-ink) dark:text-white leading-none">
               {title}
             </h3>
           ) : (

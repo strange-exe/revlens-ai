@@ -2,7 +2,7 @@ import React from "react"
 
 const variants = {
   primary: "bg-(--color-brand-600) text-white hover:bg-(--color-brand-700) focus:ring-(--color-brand-500) shadow-sm hover:shadow-md hover:-translate-y-0.5",
-  secondary: "bg-white dark:bg-(--color-surface-elevated-dark) text-(--color-brand-600) dark:text-white border border-(--color-border) dark:border-(--color-border-dark) hover:bg-(--color-surface-muted) dark:hover:bg-(--color-surface-muted-dark) focus:ring-(--color-brand-500) shadow-sm hover:shadow-md hover:-translate-y-0.5",
+  secondary: "bg-white dark:bg-(--color-surface-elevated-dark) text-(--color-ink) dark:text-white border border-(--color-border) dark:border-(--color-border-dark) hover:bg-(--color-surface-muted) dark:hover:bg-(--color-surface-muted-dark) focus:ring-(--color-brand-500) shadow-sm hover:shadow-md hover:-translate-y-0.5",
   danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm",
   ghost: "bg-transparent text-(--color-muted) dark:text-(--color-muted-dark) hover:bg-(--color-surface-muted) dark:hover:bg-(--color-surface-muted-dark) focus:ring-(--color-brand-500)",
   custom: ""
@@ -42,7 +42,7 @@ export default function Button({
   disabled,
   ...props
 }) {
-  const baseStyle = `inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer ${fullWidth ? "w-full" : ""}`
+  const baseStyle = `inline-flex items-center justify-center whitespace-nowrap font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer ${fullWidth ? "w-full" : ""}`
   
   return (
     <button

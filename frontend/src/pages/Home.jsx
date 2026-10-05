@@ -1,267 +1,143 @@
-import { useNavigate } from "react-router-dom"
-import Button from "../components/ui/Button"
+import { Link } from "react-router-dom"
+import { ArrowRight } from "lucide-react"
 import Hero from "../components/Hero"
-import StatCounter from "../components/StatCounter"
-import Testimonials from "../components/Testimonials"
-import useScrollReveal from "../hooks/useScrollReveal"
-import { BarChart3, MessageSquareText, Sparkles, ArrowUpRight, Quote, Shield, Clock, Globe, ChevronRight } from "lucide-react"
+import ReviewShowcase from "../components/ReviewShowcase"
+import SectionHead from "../components/SectionHead"
+
+const steps = [
+  { title: "Add your reviews", desc: "Paste in reviews from Airbnb, Booking.com, Google, TripAdvisor, MakeMyTrip, Agoda or anywhere else, per property." },
+  { title: "RevLens reads them", desc: "Each review gets a sentiment, a spam check and a verdict on six aspects. Every label says which engine produced it." },
+  { title: "You act on what matters", desc: "See which problems keep coming up, ask questions in plain language, and send replies you have edited." },
+]
+
+// Small, true-to-product visuals (sample data)
+const bar = (label, pct, color) => (
+  <div key={label} className="flex items-center gap-3 text-xs text-(--color-muted) dark:text-(--color-muted-dark)">
+    <span className="w-16 shrink-0">{label}</span>
+    <span className="flex-1 h-1.5 rounded-full bg-(--color-border) dark:bg-white/10 overflow-hidden"><span className={`block h-full ${color}`} style={{ width: `${pct}%` }} /></span>
+    <span className="w-9 text-right tabular-nums font-semibold text-(--color-ink) dark:text-white">{pct}%</span>
+  </div>
+)
+const aspect = (name, good) => (
+  <span key={name} className={`text-sm font-semibold ${good ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}>{name} {good ? "+" : "−"}</span>
+)
 
 const features = [
   {
-    title: "Sentiment Analysis",
-    description: "Classify every review as positive, neutral, or negative using AI. Know at a glance how your property is performing.",
-    icon: <BarChart3 size={24} />,
-    gradient: "from-emerald-400 to-teal-600",
-    lightBg: "bg-emerald-50 dark:bg-emerald-900/20",
+    title: "Sentiment and spam, labelled",
+    desc: "Positive, neutral or negative for every review. Spam is held back so it can't skew your numbers.",
+    visual: <div className="space-y-2.5">{bar("Positive", 72, "bg-emerald-500")}{bar("Neutral", 18, "bg-amber-400")}{bar("Negative", 10, "bg-rose-500")}</div>,
   },
   {
-    title: "Theme Detection",
-    description: "Surface recurring topics across all reviews. Spot what guests love and what needs fixing — instantly.",
-    icon: <MessageSquareText size={24} />,
-    gradient: "from-violet-400 to-purple-600",
-    lightBg: "bg-violet-50 dark:bg-violet-900/20",
+    title: "Six aspects, not one score",
+    desc: "Cleanliness, location, WiFi, hosting, value and amenities, judged review by review.",
+    visual: <div className="flex flex-wrap gap-x-5 gap-y-2">{aspect("Cleanliness", true)}{aspect("WiFi", false)}{aspect("Location", true)}{aspect("Value", false)}{aspect("Host", true)}</div>,
   },
   {
-    title: "AI Responses",
-    description: "Generate thoughtful, on-brand replies to reviews with one click. Save hours while staying personal.",
-    icon: <Sparkles size={24} />,
-    gradient: "from-amber-400 to-orange-600",
-    lightBg: "bg-amber-50 dark:bg-amber-900/20",
+    title: "Reply drafts you control",
+    desc: "One click drafts a reply to what the guest actually wrote. You edit it, then copy it to the platform.",
+    visual: <p className="text-sm leading-relaxed text-(--color-ink) dark:text-white border-l-2 border-(--color-brand-500) pl-3">&ldquo;Thank you! We&rsquo;re sorry about the WiFi and are upgrading the router.&rdquo;</p>,
+  },
+  {
+    title: "Ask your reviews",
+    desc: "Answers come only from your reviews and list the ones they used, so you can check them.",
+    visual: (
+      <div className="text-sm leading-relaxed">
+        <p className="font-semibold text-(--color-ink) dark:text-white">What do guests complain about most?</p>
+        <p className="mt-1 text-(--color-muted) dark:text-(--color-muted-dark)">The access road and slow WiFi, in 3 of 12 reviews. <span className="text-(--color-brand-600) dark:text-(--color-brand-300) font-semibold">Sources: Vikram, Rahul, Karan</span></p>
+      </div>
+    ),
   },
 ]
 
-const stats = [
-  { value: "93%", label: "Accuracy rate" },
-  { value: "3x", label: "Faster insights" },
-  { value: "10+", label: "Platform integrations" },
-]
-
-const process = [
-  {
-    step: "01",
-    title: "Connect",
-    desc: "Link your properties from Airbnb, Booking.com, Google, and more.",
-    color: "bg-(--color-brand-400)",
-  },
-  {
-    step: "02",
-    title: "Analyze",
-    desc: "AI classifies sentiment, detects themes, and scores each review.",
-    color: "bg-(--color-accent-400)",
-  },
-  {
-    step: "03",
-    title: "Act",
-    desc: "Get recommended responses, track trends, and improve your ratings.",
-    color: "bg-(--color-brand-600)",
-  },
-]
-
-const benefits = [
-  {
-    icon: <Clock size={22} />,
-    title: "Save 10+ Hours Weekly",
-    description: "Automate review reading, classification, and response generation. Focus on what matters — your guests.",
-    gradient: "from-(--color-brand-400)/10 to-transparent",
-  },
-  {
-    icon: <Shield size={22} />,
-    title: "Data Privacy First",
-    description: "Your review data is encrypted end-to-end. We never share or sell your data. GDPR & CCPA compliant.",
-    gradient: "from-violet-400/10 to-transparent",
-  },
-  {
-    icon: <Globe size={22} />,
-    title: "Multi-Platform Support",
-    description: "One dashboard for all your review sources. No more juggling between Airbnb, Booking.com, and Google.",
-    gradient: "from-(--color-accent-400)/10 to-transparent",
-  },
+// Verifiable facts about how RevLens is built and evaluated (see ml/DATASETS.md)
+const facts = [
+  { value: "6", label: "guest-experience aspects tracked in every review" },
+  { value: "40k", label: "hotel reviews in the frozen test set we evaluate on" },
+  { value: "4", label: "label sources, always shown: AI model, LLM, keyword rule, or you" },
 ]
 
 export default function Home() {
-  const containerRef = useScrollReveal()
-  const navigate = useNavigate()
-
   return (
-    <div ref={containerRef}>
-      <Hero
-        titleLines={["Turn Reviews", "into Revenue"]}
-        subtitle="AI-powered review intelligence for homestay owners. Analyze sentiment, detect themes, and generate smart responses — all in one dashboard."
-        ctaText="Get Started"
-        ctaLink="/dashboard"
-      />
+    <>
+      <Hero />
 
-      {/* Features Section */}
-      <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden">
-        <div className="absolute inset-0 noise-overlay" />
-        <div className="absolute inset-0 grid-pattern" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-(--color-brand-200)/15 dark:bg-(--color-brand-800)/15 blur-[120px]" />
+      <section className="border-t border-(--color-border) dark:border-(--color-border-dark) py-20 lg:py-24">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <SectionHead label="How it works" title="From a pile of reviews to a short list of fixes" />
+          <ol className="grid md:grid-cols-3 gap-10 md:gap-8">
+            {steps.map((s, i) => (
+              <li key={s.title} className="border-t-2 border-(--color-ink) dark:border-white pt-5">
+                <span className="font-heading text-sm font-bold tabular-nums text-(--color-brand-600) dark:text-(--color-brand-300)">0{i + 1}</span>
+                <h3 className="mt-2 text-lg font-semibold text-(--color-ink) dark:text-white">{s.title}</h3>
+                <p className="mt-2 text-base leading-relaxed text-(--color-muted) dark:text-(--color-muted-dark)">{s.desc}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="reveal flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-16">
-            <div className="max-w-xl">
-              <span className="font-heading text-xs font-bold tracking-[0.2em] uppercase text-(--color-brand-400)">Features</span>
-              <h2 className="font-heading text-4xl sm:text-5xl font-bold text-(--color-brand-600) dark:text-white mt-3 leading-tight">
-                Intelligence,<br />not just data
-              </h2>
-            </div>
-            <p className="text-sm text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed max-w-sm">
-              RevLens transforms unstructured guest feedback into actionable business insights using AI.
+      <section className="py-20 lg:py-24 bg-(--color-surface-elevated) dark:bg-(--color-surface-elevated-dark) border-y border-(--color-border) dark:border-(--color-border-dark)">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <SectionHead label="What you get" title="Less reading, clearer decisions">
+            Every feature works on the reviews you add. Nothing is sent to a guest without you.
+          </SectionHead>
+          <div className="grid md:grid-cols-2 gap-x-16">
+            {features.map((f) => (
+              <article key={f.title} className="grid sm:grid-cols-2 gap-6 py-8 border-t border-(--color-border) dark:border-(--color-border-dark)">
+                <div>
+                  <h3 className="text-lg font-semibold text-(--color-ink) dark:text-white">{f.title}</h3>
+                  <p className="mt-2 text-base leading-relaxed text-(--color-muted) dark:text-(--color-muted-dark)">{f.desc}</p>
+                </div>
+                <div className="self-center">{f.visual}</div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 lg:py-24 bg-(--color-ink) text-white dark:bg-white/[0.04]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-[1fr_2fr] gap-12">
+          <div>
+            <p className="text-sm font-semibold text-white/70">Built to be checked</p>
+            <h2 className="mt-2 font-heading text-3xl sm:text-4xl font-bold tracking-[-0.03em] leading-tight">AI you can audit, not just trust</h2>
+            <p className="mt-4 text-base leading-relaxed text-white/75 max-w-sm">
+              When the AI is offline, RevLens says so instead of guessing. You can overrule any label.
             </p>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((f, i) => (
-              <div
-                key={f.title}
-                className="reveal group relative rounded-2xl widget-card overflow-hidden hover:-translate-y-1 flex flex-col h-full"
-                style={{ transitionDelay: `${i * 0.1}s` }}
-              >
-                {/* Top gradient accent */}
-                <div className={`h-1 bg-gradient-to-r ${f.gradient} opacity-60 group-hover:opacity-100 transition-opacity duration-500`} />
-                
-                {/* Hover glow */}
-                <div className={`absolute inset-0 bg-gradient-to-b ${f.gradient} opacity-0 group-hover:opacity-[0.03] transition-opacity duration-500`} />
-
-                <div className="relative p-7 flex flex-col flex-1">
-                  <div className={`w-12 h-12 rounded-xl ${f.lightBg} flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3`}>
-                    <span className="text-(--color-brand-600) dark:text-white">{f.icon}</span>
-                  </div>
-                  <h3 className="font-heading text-lg font-bold text-(--color-brand-600) dark:text-white">{f.title}</h3>
-                  <p className="mt-2.5 text-sm text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed flex-1">{f.description}</p>
-                  <div className="mt-5 inline-flex items-center gap-1.5 text-xs font-bold text-(--color-brand-500) dark:text-(--color-accent-400) group-hover:gap-2.5 transition-all cursor-pointer w-fit">
-                    Learn More
-                    <ChevronRight size={13} className="transition-transform group-hover:translate-x-0.5" />
-                  </div>
-                </div>
+          <dl className="grid sm:grid-cols-3 gap-8">
+            {facts.map((f) => (
+              <div key={f.label} className="border-t border-white/25 pt-5 flex flex-col-reverse justify-end">
+                <dt className="mt-3 text-sm leading-relaxed text-white/75">{f.label}</dt>
+                <dd className="font-heading text-5xl lg:text-6xl font-bold tracking-tight tabular-nums">{f.value}</dd>
               </div>
             ))}
-          </div>
+          </dl>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="relative min-h-[100dvh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-(--color-brand-600) to-(--color-brand-800) dark:from-(--color-brand-900) dark:to-black" />
-        <div className="absolute inset-0 noise-overlay" />
-        <div className="absolute inset-0 grid-pattern opacity-20" />
-        <div className="absolute top-0 left-1/3 w-[500px] h-[500px] rounded-full bg-(--color-brand-50)/5 blur-[120px]" />
-        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 lg:gap-16">
-            {stats.map((s) => (
-              <StatCounter key={s.label} value={s.value} label={s.label} />
-            ))}
-          </div>
-        </div>
-      </section>
+      <ReviewShowcase />
 
-      {/* How It Works Section */}
-      <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden">
-        <div className="absolute inset-0 noise-overlay" />
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-(--color-brand-100)/30 dark:bg-(--color-brand-800)/30 blur-[100px]" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="reveal flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-16">
-            <div className="max-w-xl">
-              <span className="font-heading text-xs font-bold tracking-[0.2em] uppercase text-(--color-brand-400)">How It Works</span>
-              <h2 className="font-heading text-4xl sm:text-5xl font-bold text-(--color-brand-600) dark:text-white mt-3 leading-tight">
-                Three steps to<br />smarter reviews
-              </h2>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
-            {process.map((p, i) => (
-              <div key={p.step} className="reveal relative" style={{ transitionDelay: `${i * 0.1}s` }}>
-                {i < process.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-[60%] w-full h-px bg-gradient-to-r from-(--color-brand-200) to-transparent dark:from-(--color-brand-700)" />
-                )}
-                <div className="flex items-center gap-4 mb-4">
-                  <div className={`w-14 h-14 rounded-2xl ${p.color}/10 flex items-center justify-center`}>
-                    <span className={`font-heading text-2xl font-bold bg-gradient-to-br ${p.color === "bg-(--color-brand-400)" ? "from-(--color-brand-400) to-(--color-brand-600)" : p.color === "bg-(--color-accent-400)" ? "from-(--color-accent-400) to-(--color-accent-600)" : "from-(--color-brand-600) to-(--color-brand-800)"} bg-clip-text text-transparent`}>
-                      {p.step}
-                    </span>
-                  </div>
-                </div>
-                <h3 className="font-heading text-xl font-bold text-(--color-brand-600) dark:text-white">{p.title}</h3>
-                <p className="mt-2 text-sm text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed">{p.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="relative min-h-[100dvh] flex items-center py-20 lg:py-28 overflow-hidden bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark)">
-        <div className="absolute inset-0 noise-overlay" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="reveal text-center mb-14">
-            <span className="font-heading text-xs font-bold tracking-[0.2em] uppercase text-(--color-brand-400)">
-              Why RevLens
-            </span>
-            <h2 className="font-heading text-4xl sm:text-5xl font-bold text-(--color-brand-600) dark:text-white mt-3 leading-tight">
-              Built for hospitality
+      <section className="border-t border-(--color-border) dark:border-(--color-border-dark) py-20 lg:py-24">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+          <div className="max-w-xl">
+            <h2 className="font-heading text-3xl sm:text-4xl font-bold tracking-[-0.03em] leading-tight text-(--color-ink) dark:text-white">
+              Start with the reviews you already have.
             </h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {benefits.map((b, i) => (
-              <div
-                key={b.title}
-                className="reveal group relative rounded-2xl widget-card p-7 overflow-hidden hover:-translate-y-0.5 flex flex-col h-full"
-                style={{ transitionDelay: `${i * 0.1}s` }}
-              >
-                <div className={`absolute inset-0 bg-gradient-to-b ${b.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                <div className="relative flex flex-col flex-1">
-                  <div className="p-3 rounded-xl w-fit bg-(--color-brand-50) dark:bg-(--color-brand-800) text-(--color-brand-500) dark:text-(--color-brand-300) mb-4 transition-transform duration-300 group-hover:scale-105">
-                    {b.icon}
-                  </div>
-                  <h3 className="font-heading text-base font-bold text-(--color-brand-600) dark:text-white">{b.title}</h3>
-                  <p className="mt-2 text-sm text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed flex-1">{b.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <Testimonials />
-
-      {/* CTA Section */}
-      <section className="relative min-h-[100dvh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-(--color-brand-600) to-(--color-brand-900) dark:from-black dark:to-(--color-brand-900)" />
-        <div className="absolute inset-0 noise-overlay" />
-        <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] rounded-full bg-(--color-brand-500)/5 blur-[120px] -translate-x-1/2 -translate-y-1/2" />
-        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
-          <div className="reveal max-w-2xl mx-auto text-center">
-            <Quote size={32} className="text-(--color-brand-400)/40 mx-auto mb-6" />
-            <h2 className="font-heading text-4xl sm:text-5xl font-bold text-white leading-tight">
-              Ready to simplify<br />your reviews?
-            </h2>
-            <p className="mt-4 text-base text-white/60 leading-relaxed max-w-md mx-auto">
-              Connect your properties and start understanding your guests better — in minutes, not hours.
+            <p className="mt-3 text-base text-(--color-muted) dark:text-(--color-muted-dark)">
+              Free during the beta. No card needed.
             </p>
-            <div className="mt-10 flex flex-wrap justify-center gap-3">
-              <Button
-                variant="custom"
-                size="lg"
-                icon={<ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />}
-                iconPosition="right"
-                onClick={() => navigate("/login")}
-                className="group bg-white text-(--color-brand-600) hover:bg-(--color-brand-50) shadow-xl hover:shadow-2xl hover:-translate-y-0.5"
-              >
-                Create Free Account
-              </Button>
-              <Button
-                variant="custom"
-                size="lg"
-                onClick={() => navigate("/pricing")}
-                className="border border-white/30 text-white bg-transparent hover:bg-white/10 dark:bg-transparent dark:hover:bg-white/10 w-full sm:w-auto"
-              >
-                View Pricing
-              </Button>
-            </div>
+          </div>
+          <div className="flex items-center gap-6">
+            <Link to="/login?mode=signup" className="group inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-(--color-brand-600) text-white font-semibold hover:bg-(--color-brand-700) transition-colors">
+              Start free <ArrowRight size={18} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <Link to="/pricing" className="text-sm font-semibold text-(--color-ink) dark:text-white underline decoration-(--color-border) dark:decoration-white/30 underline-offset-4 hover:decoration-current">
+              See pricing
+            </Link>
           </div>
         </div>
       </section>
-    </div>
+    </>
   )
 }

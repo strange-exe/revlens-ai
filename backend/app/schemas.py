@@ -7,7 +7,7 @@ from typing import Optional
 class PropertyCreate(BaseModel):
     name: str
     location: str
-    price: str = "₹5,000/night"
+    price: Optional[str] = None
     distance: Optional[str] = None
     is_user_property: bool = True
     user_id: Optional[int] = None
@@ -17,7 +17,7 @@ class PropertyOut(BaseModel):
     id: int
     name: str
     location: str
-    price: str
+    price: Optional[str]
     distance: Optional[str]
     rating: float
     reviews_count: int
@@ -37,11 +37,16 @@ class ReviewCreate(BaseModel):
     rating: int = Field(..., ge=1, le=5)
     text: str
     date: str
-    sentiment: str = "neutral"
+    sentiment: Optional[str] = None  # omit to have the backend classify it
     source: str = "Airbnb"
     is_spam: bool = False
     is_unflagged: bool = False
     response: Optional[str] = None
+
+
+class AskRequest(BaseModel):
+    question: str = Field(..., min_length=1, max_length=500)
+    property_id: Optional[int] = None
 
 
 class ReviewUpdate(BaseModel):
@@ -66,6 +71,8 @@ class ReviewOut(BaseModel):
     is_spam: bool
     is_unflagged: bool
     response: Optional[str]
+    label_source: Optional[str] = None
+    aspects: Optional[dict[str, str]] = None
 
     class Config:
         from_attributes = True
