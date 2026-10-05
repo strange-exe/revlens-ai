@@ -2,7 +2,7 @@ import React, { useReducer, useEffect } from "react"
 import { useEffectEvent } from "../hooks/useEffectEvent"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { ArrowRight, Check, Mail, Lock, User, AlertCircle } from "lucide-react"
-import { ReviewSpecimen } from "../components/Hero"
+import ReviewDemo from "../components/ReviewDemo"
 import Button from "../components/ui/Button"
 import Input from "../components/ui/Input"
 import Loader from "../components/ui/Loader"
@@ -131,7 +131,7 @@ function LoginForm({ signup }) {
               Every review, marked up for you.
             </h2>
           </div>
-          <ReviewSpecimen compact />
+          <ReviewDemo compact />
           <ul className="space-y-2.5 text-sm text-white/80">
             {["Every AI label shows where it came from", "Reply drafts you edit before sending", "Answers cite the reviews they use"].map((t) => (
               <li key={t} className="flex items-center gap-2.5"><Check size={16} aria-hidden="true" className="text-emerald-400 shrink-0" />{t}</li>

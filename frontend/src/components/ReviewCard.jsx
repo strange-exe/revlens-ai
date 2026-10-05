@@ -23,7 +23,7 @@ export default function ReviewCard({ review, onReply, onDelete, onUnflag }) {
   const badge = labelSourceBadges[review.labelSource]
 
   return (
-    <div className={`group relative rounded-2xl widget-card p-5 transition-all duration-300 ${isSpam ? "border-red-500/30 bg-red-500/5 dark:bg-red-950/5 ring-1 ring-red-500/10" : ""}`}>
+    <div className={`lift group relative rounded-2xl widget-card p-5 ${isSpam ? "border-red-500/30 bg-red-500/5 dark:bg-red-950/5 ring-1 ring-red-500/10" : ""}`}>
       <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl transition-all duration-300 ${isSpam ? "bg-red-500" : sentiment === "positive" ? "bg-(--color-brand-400)" : sentiment === "negative" ? "bg-red-400" : "bg-(--color-accent-400)"} group-hover:w-1.5`} />
 
       <div className="flex items-start justify-between gap-4 pl-2">

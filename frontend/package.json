@@ -12,6 +12,8 @@
     "size": "vite build && node scripts/check-size.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/sora": "^5.3.0",
+    "@fontsource-variable/syne": "^5.3.0",
     "lucide-react": "^1.17.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

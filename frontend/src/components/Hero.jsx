@@ -1,49 +1,6 @@
 import { Link } from "react-router-dom"
-import { ArrowRight, ArrowDown, Star } from "lucide-react"
-
-// A real demo review with the labels Gemini produced for it (see ReviewShowcase), marked up the way RevLens reads it.
-function Note({ tone, children }) {
-  return (
-    <sup className={`ml-1 whitespace-nowrap text-[11px] font-semibold not-italic tracking-wide ${tone === "pos" ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}>
-      {children}
-    </sup>
-  )
-}
-
-export function ReviewSpecimen({ compact = false }) {
-  return (
-    <figure className="relative rounded-xl bg-(--color-surface-elevated) dark:bg-(--color-surface-elevated-dark) border border-(--color-border) dark:border-(--color-border-dark) shadow-[0_1px_0_rgb(0_0_0/0.04),0_24px_48px_-24px_rgb(25_23_31/0.25)]">
-      <figcaption className="flex items-center justify-between gap-3 px-5 sm:px-6 py-3.5 border-b border-(--color-border) dark:border-(--color-border-dark) text-xs text-(--color-muted) dark:text-(--color-muted-dark)">
-        <span><span className="font-semibold text-(--color-ink) dark:text-white">Rahul</span> · Sunset Villa · sample review</span>
-        <span className="flex gap-0.5" role="img" aria-label="4 out of 5 stars">
-          {Array.from({ length: 5 }, (_, i) => <Star key={i} size={12} aria-hidden="true" className={i < 4 ? "fill-amber-400 text-amber-400" : "text-(--color-border) dark:text-white/20"} />)}
-        </span>
-      </figcaption>
-
-      <blockquote className="px-5 sm:px-6 pt-5 pb-6 text-lg leading-[1.9] text-(--color-ink) dark:text-white">
-        Great stay overall. <mark className="mark mark-pos">The pool was clean<Note tone="pos">Cleanliness +</Note></mark> and{" "}
-        <mark className="mark mark-pos">the staff was friendly<Note tone="pos">Host +</Note></mark>.{" "}
-        <mark className="mark mark-neg">Could improve the WiFi speed<Note tone="neg">WiFi −</Note></mark> though.
-      </blockquote>
-
-      <dl className="grid grid-cols-3 border-t border-(--color-border) dark:border-(--color-border-dark) text-xs">
-        {[["Sentiment", "Positive"], ["Spam", "No"], ["Labelled by", "LLM"]].map(([k, v]) => (
-          <div key={k} className="px-5 sm:px-6 py-3 border-r last:border-r-0 border-(--color-border) dark:border-(--color-border-dark)">
-            <dt className="text-(--color-muted) dark:text-(--color-muted-dark)">{k}</dt>
-            <dd className="mt-0.5 font-semibold text-(--color-ink) dark:text-white">{v}</dd>
-          </div>
-        ))}
-      </dl>
-
-      {!compact && <div className="px-5 sm:px-6 py-4 border-t border-(--color-border) dark:border-(--color-border-dark) bg-(--color-surface-muted)/60 dark:bg-white/[0.03] rounded-b-xl">
-        <p className="text-xs font-semibold text-(--color-brand-600) dark:text-(--color-brand-300)">Draft reply · you edit before sending</p>
-        <p className="mt-1.5 text-sm leading-relaxed text-(--color-ink)/80 dark:text-white/80">
-          Thank you, Rahul! We&rsquo;re glad you enjoyed the pool and our team. You&rsquo;re right about the WiFi, and we&rsquo;re looking at a faster connection.
-        </p>
-      </div>}
-    </figure>
-  )
-}
+import { ArrowRight, ArrowDown } from "lucide-react"
+import ReviewDemo from "./ReviewDemo"
 
 export default function Hero() {
   return (
@@ -65,7 +22,7 @@ export default function Hero() {
           <div className="mt-9 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
             <Link
               to="/login?mode=signup"
-              className="group inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-(--color-brand-600) text-white text-base font-semibold hover:bg-(--color-brand-700) transition-colors shadow-[0_8px_24px_-8px_rgb(124_58_237/0.6)]"
+              className="press group inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-(--color-brand-600) text-white text-base font-semibold hover:bg-(--color-brand-700) transition-colors shadow-[0_8px_24px_-8px_rgb(124_58_237/0.6)]"
             >
               Start free
               <ArrowRight size={18} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
@@ -79,7 +36,7 @@ export default function Hero() {
           </p>
         </div>
 
-        <ReviewSpecimen />
+        <ReviewDemo />
       </div>
     </section>
   )

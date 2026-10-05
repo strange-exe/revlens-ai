@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { useProperty } from "../context/PropertyContext"
+import PageSkeleton from "../components/ui/Skeleton"
 import { useDismissibleError } from "../hooks/useDismissibleError"
 import { 
   BarChart3, 
@@ -20,7 +21,6 @@ import {
   TrendingDown,
   Info
 } from "lucide-react"
-import Loader from "../components/ui/Loader"
 import Toast from "../components/ui/Toast"
 import { isSpamReview } from "../services/reviewFilters"
 
@@ -144,13 +144,7 @@ export default function Analytics() {
     return recs
   }, [themes])
 
-  if (loading) {
-    return (
-      <div className="flex-grow flex items-center justify-center min-h-[60vh]">
-        <Loader size="lg" text="Aggregating property metrics..." />
-      </div>
-    )
-  }
+  if (loading) return <PageSkeleton label="Loading analytics" variant="dashboard" />
 
   const positivePct = total > 0 ? Math.round((positive / total) * 100) : 0
 
@@ -271,9 +265,9 @@ export default function Analytics() {
                   <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" className="text-(--color-border) dark:text-(--color-border-dark)" />
                   {total > 0 && (
                     <>
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${(positive / total) * 88} ${88 - (positive / total) * 88}`} strokeDashoffset="0" className="text-emerald-500 transition-all duration-1000" strokeLinecap="round" />
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${(neutral / total) * 88} ${88 - (neutral / total) * 88}`} strokeDashoffset={`${-((positive / total) * 88)}`} className="text-amber-500 transition-all duration-1000" strokeLinecap="round" />
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${(negative / total) * 88} ${88 - (negative / total) * 88}`} strokeDashoffset={`${-(((positive + neutral) / total) * 88)}`} className="text-rose-500 transition-all duration-1000" strokeLinecap="round" />
+                      <circle className="sweep" cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${(positive / total) * 88} ${88 - (positive / total) * 88}`} strokeDashoffset="0" className="text-emerald-500 transition-all duration-1000" strokeLinecap="round" />
+                      <circle className="sweep" cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${(neutral / total) * 88} ${88 - (neutral / total) * 88}`} strokeDashoffset={`${-((positive / total) * 88)}`} className="text-amber-500 transition-all duration-1000" strokeLinecap="round" />
+                      <circle className="sweep" cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${(negative / total) * 88} ${88 - (negative / total) * 88}`} strokeDashoffset={`${-(((positive + neutral) / total) * 88)}`} className="text-rose-500 transition-all duration-1000" strokeLinecap="round" />
                     </>
                   )}
                 </svg>
@@ -309,7 +303,7 @@ export default function Analytics() {
                 </div>
                 <div className="h-2.5 rounded-full bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark) border border-(--color-border)/20 dark:border-white/5 overflow-hidden">
                   <div
-                    className={`h-full rounded-full ${b.color} transition-all duration-1000 ease-out shadow-sm`}
+                    className={`grow-x h-full rounded-full ${b.color}`}
                     style={{ width: `${b.pct}%` }}
                   />
                 </div>
@@ -365,7 +359,7 @@ export default function Analytics() {
                   </div>
                   <div className="flex-grow h-2.5 rounded-full bg-(--color-surface-muted) dark:bg-(--color-surface-muted-dark) border border-(--color-border)/20 dark:border-white/5 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-amber-400 transition-all duration-1000 ease-out shadow-sm"
+                      className="grow-x h-full rounded-full bg-amber-400"
                       style={{ width: `${pct}%` }}
                     />
                   </div>

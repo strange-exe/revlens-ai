@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react"
 import { Sparkles, Send, Bot, User, Trash2, AlertTriangle, Star } from "lucide-react"
 import Button from "../components/ui/Button"
-import Loader from "../components/ui/Loader"
 import Toast from "../components/ui/Toast"
 import { api } from "../services/api"
 import { useProperty } from "../context/PropertyContext"
+import PageSkeleton from "../components/ui/Skeleton"
 import { useDismissibleError } from "../hooks/useDismissibleError"
 
 const now = () => new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -156,13 +156,7 @@ export default function Assistant() {
     setIsThinking(false)
   }
 
-  if (loading) {
-    return (
-      <div className="flex-grow flex items-center justify-center min-h-[60vh]">
-        <Loader size="lg" text="Loading your reviews..." />
-      </div>
-    )
-  }
+  if (loading) return <PageSkeleton label="Loading the assistant" variant="chat" />
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[450px]">

@@ -3,8 +3,8 @@
 @custom-variant dark (.dark &);
 
 @theme {
-  --font-heading: "Syne", sans-serif;
-  --font-body: "Sora", sans-serif;
+  --font-heading: "Syne Variable", sans-serif;
+  --font-body: "Sora Variable", sans-serif;
 
   /* ── Brand (Amethyst) ── */
   --color-brand-50:  #f5f3ff;
@@ -390,8 +390,64 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ── Annotation marks: the RevLens motif. Review text is highlighted the way the AI reads it. ── */
-.mark { padding: 0.05em 0.15em; margin: 0 -0.1em; border-radius: 0.2em; box-decoration-break: clone; -webkit-box-decoration-break: clone; color: inherit; }
-.mark-pos { background: rgb(16 185 129 / 0.18); box-shadow: inset 0 -0.14em 0 rgb(5 150 105 / 0.55); }
-.mark-neg { background: rgb(244 63 94 / 0.16); box-shadow: inset 0 -0.14em 0 rgb(225 29 72 / 0.55); }
-.dark .mark-pos { background: rgb(16 185 129 / 0.22); }
-.dark .mark-neg { background: rgb(244 63 94 / 0.22); }
+/* Two background layers (underline + fill) so the highlight can "draw" left to right */
+.mark {
+  padding: 0.05em 0.15em; margin: 0 -0.1em; border-radius: 0.2em; color: inherit;
+  box-decoration-break: clone; -webkit-box-decoration-break: clone;
+  background:
+    linear-gradient(var(--mark-line), var(--mark-line)) left bottom / 100% 0.14em no-repeat,
+    linear-gradient(var(--mark-fill), var(--mark-fill)) left / 100% 100% no-repeat;
+}
+.mark-pos { --mark-fill: rgb(16 185 129 / 0.18); --mark-line: rgb(5 150 105 / 0.6); }
+.mark-neg { --mark-fill: rgb(244 63 94 / 0.16); --mark-line: rgb(225 29 72 / 0.6); }
+.dark .mark-pos { --mark-fill: rgb(16 185 129 / 0.24); }
+.dark .mark-neg { --mark-fill: rgb(244 63 94 / 0.24); }
+
+/* Review demo: highlights draw in one by one, each label pops after its phrase, results fade in last.
+   Paused until the card is on screen (data-play), replayed by remounting on a new sample. */
+@keyframes mark-draw { from { background-size: 0% 0.14em, 0% 100%; } }
+@keyframes note-pop { from { opacity: 0; transform: translateY(0.3em) scale(0.85); } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(4px); } }
+.demo .mark { animation: mark-draw 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: calc(var(--i) * 0.45s + 0.2s); }
+.demo .mark sup { display: inline-block; animation: note-pop 0.3s ease-out both; animation-delay: calc(var(--i) * 0.45s + 0.65s); }
+.demo .demo-fade { animation: fade-up 0.35s ease-out both; animation-delay: var(--d, 0s); }
+.demo .demo-word { display: inline-block; white-space: pre; animation: fade-up 0.3s ease-out both; animation-delay: calc(var(--d, 0s) + var(--w) * 35ms); }
+.demo:not([data-play]) .mark, .demo:not([data-play]) .mark sup, .demo:not([data-play]) .demo-fade, .demo:not([data-play]) .demo-word { animation-play-state: paused; }
+
+/* Sections rise in as they scroll into view: scroll-driven, no JS; browsers without support just show them */
+@supports (animation-timeline: view()) {
+  .reveal-up { animation: rise linear both; animation-timeline: view(); animation-range: entry 5% cover 25%; }
+  @keyframes rise { from { opacity: 0; transform: translateY(28px); } }
+}
+
+/* Route change: the new page eases in (keyed on pathname) */
+.page-enter { animation: page-in 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes page-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* Tactile controls: a small press, a lift on hover for clickable cards */
+.press { transition: transform 0.12s ease, background-color 0.15s ease, box-shadow 0.2s ease; }
+.press:active { transform: scale(0.97); }
+.lift { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+@media (hover: hover) { .lift:hover { transform: translateY(-2px); box-shadow: 0 12px 28px -16px rgb(25 23 31 / 0.35); } }
+
+/* Data that grows into place: bars scale from the left, donut strokes sweep in */
+@keyframes grow-x { from { transform: scaleX(0); } }
+.grow-x { transform-origin: left center; animation: grow-x 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes sweep { from { stroke-dasharray: 0 88; } }
+.sweep { animation: sweep 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-up, .page-enter, .grow-x, .sweep, .demo .mark, .demo .mark sup, .demo .demo-fade, .demo .demo-word { animation: none !important; }
+  .press:active, .lift:hover { transform: none; }
+}
+
+/* ── Skeleton placeholders (shimmer stops under reduced motion via the global rule) ── */
+.skeleton {
+  /* border-strength tone: clearly visible on the warm page background, with a lighter sweep */
+  background: linear-gradient(90deg, var(--color-border) 25%, color-mix(in oklab, var(--color-border) 45%, white) 50%, var(--color-border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+.dark .skeleton {
+  background-image: linear-gradient(90deg, rgb(255 255 255 / 0.07) 25%, rgb(255 255 255 / 0.13) 50%, rgb(255 255 255 / 0.07) 75%);
+}

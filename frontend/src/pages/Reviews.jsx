@@ -6,9 +6,9 @@ import Input from "../components/ui/Input"
 import Modal from "../components/ui/Modal"
 import AnimatedTabs from "../components/fx/AnimatedTabs"
 import Toast from "../components/ui/Toast"
-import Loader from "../components/ui/Loader"
 import { isSpamReview } from "../services/reviewFilters"
 import { useProperty } from "../context/PropertyContext"
+import PageSkeleton from "../components/ui/Skeleton"
 
 // Where the draft came from (backend `source`), so a template is never mistaken for an AI reply
 const DRAFT_LABELS = {
@@ -91,13 +91,7 @@ export default function Reviews() {
     return filtered.filter((r) => r.sentiment === "negative" && !(isSpamReview(r))).length
   }, [filtered])
 
-  if (loading) {
-    return (
-      <div className="flex-grow flex items-center justify-center min-h-[60vh]">
-        <Loader size="lg" text="Loading guest feedback..." />
-      </div>
-    )
-  }
+  if (loading) return <PageSkeleton label="Loading reviews" variant="list" />
 
   const handleOpenReplyModal = async (review) => {
     setViewState(prev => ({

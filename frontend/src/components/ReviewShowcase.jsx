@@ -23,7 +23,7 @@ const SENTIMENT_TEXT = {
 
 function Sample({ review }) {
   return (
-    <article className="flex flex-col py-8 md:px-8 md:first:pl-0 md:last:pr-0 border-t md:border-t-0 md:border-l md:first:border-l-0 border-(--color-border) dark:border-(--color-border-dark)">
+    <article className="reveal-up flex flex-col py-8 md:px-8 md:first:pl-0 md:last:pr-0 border-t md:border-t-0 md:border-l md:first:border-l-0 border-(--color-border) dark:border-(--color-border-dark)">
       <header className="flex items-baseline justify-between gap-3">
         <p className="text-sm"><span className="font-semibold text-(--color-ink) dark:text-white">{review.guest}</span>
           <span className="text-(--color-muted) dark:text-(--color-muted-dark)"> · {review.property}</span></p>

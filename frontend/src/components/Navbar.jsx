@@ -16,7 +16,7 @@ const linkClass = ({ isActive }) =>
     ? "text-(--color-ink) dark:text-white"
     : "text-(--color-muted) dark:text-(--color-muted-dark) hover:text-(--color-ink) dark:hover:text-white"}`
 
-const primary = "inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-(--color-brand-600) text-white hover:bg-(--color-brand-700) transition-colors"
+const primary = "press inline-flex items-center justify-center px-4 py-2 text-sm font-semibold rounded-lg bg-(--color-brand-600) text-white hover:bg-(--color-brand-700) transition-colors"
 
 export default function Navbar() {
   const { user } = useAuth()

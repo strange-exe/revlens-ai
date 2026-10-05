@@ -67,7 +67,7 @@ export default function Home() {
           <SectionHead label="How it works" title="From a pile of reviews to a short list of fixes" />
           <ol className="grid md:grid-cols-3 gap-10 md:gap-8">
             {steps.map((s, i) => (
-              <li key={s.title} className="border-t-2 border-(--color-ink) dark:border-white pt-5">
+              <li key={s.title} className="reveal-up border-t-2 border-(--color-ink) dark:border-white pt-5">
                 <span className="font-heading text-sm font-bold tabular-nums text-(--color-brand-600) dark:text-(--color-brand-300)">0{i + 1}</span>
                 <h3 className="mt-2 text-lg font-semibold text-(--color-ink) dark:text-white">{s.title}</h3>
                 <p className="mt-2 text-base leading-relaxed text-(--color-muted) dark:text-(--color-muted-dark)">{s.desc}</p>
@@ -84,7 +84,7 @@ export default function Home() {
           </SectionHead>
           <div className="grid md:grid-cols-2 gap-x-16">
             {features.map((f) => (
-              <article key={f.title} className="grid sm:grid-cols-2 gap-6 py-8 border-t border-(--color-border) dark:border-(--color-border-dark)">
+              <article key={f.title} className="reveal-up grid sm:grid-cols-2 gap-6 py-8 border-t border-(--color-border) dark:border-(--color-border-dark)">
                 <div>
                   <h3 className="text-lg font-semibold text-(--color-ink) dark:text-white">{f.title}</h3>
                   <p className="mt-2 text-base leading-relaxed text-(--color-muted) dark:text-(--color-muted-dark)">{f.desc}</p>
@@ -107,7 +107,7 @@ export default function Home() {
           </div>
           <dl className="grid sm:grid-cols-3 gap-8">
             {facts.map((f) => (
-              <div key={f.label} className="border-t border-white/25 pt-5 flex flex-col-reverse justify-end">
+              <div key={f.label} className="reveal-up border-t border-white/25 pt-5 flex flex-col-reverse justify-end">
                 <dt className="mt-3 text-sm leading-relaxed text-white/75">{f.label}</dt>
                 <dd className="font-heading text-5xl lg:text-6xl font-bold tracking-tight tabular-nums">{f.value}</dd>
               </div>
@@ -129,7 +129,7 @@ export default function Home() {
             </p>
           </div>
           <div className="flex items-center gap-6">
-            <Link to="/login?mode=signup" className="group inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-(--color-brand-600) text-white font-semibold hover:bg-(--color-brand-700) transition-colors">
+            <Link to="/login?mode=signup" className="press group inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-(--color-brand-600) text-white font-semibold hover:bg-(--color-brand-700) transition-colors">
               Start free <ArrowRight size={18} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link to="/pricing" className="text-sm font-semibold text-(--color-ink) dark:text-white underline decoration-(--color-border) dark:decoration-white/30 underline-offset-4 hover:decoration-current">

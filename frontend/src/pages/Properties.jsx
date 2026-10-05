@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react"
 import { useDismissibleError } from "../hooks/useDismissibleError"
 import { useProperty } from "../context/PropertyContext"
+import PageSkeleton from "../components/ui/Skeleton"
 import { useNavigate } from "react-router-dom"
 import Select from "../components/ui/Select"
-import Loader from "../components/ui/Loader"
 import Toast from "../components/ui/Toast"
 import { Building, Search, MapPin, Star, Plus, Check, ArrowRight } from "lucide-react"
 
@@ -68,13 +68,7 @@ export default function Properties() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex-grow flex items-center justify-center min-h-[60vh]">
-        <Loader size="lg" text="Loading your properties..." />
-      </div>
-    )
-  }
+  if (loading) return <PageSkeleton label="Loading properties" variant="list" />
 
   return (
     <div className="space-y-6 animate-slide-up-sm">

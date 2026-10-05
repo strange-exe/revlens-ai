@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { Outlet, Link } from "react-router-dom"
+import { Suspense, useEffect, useState } from "react"
+import { Outlet, Link, useLocation } from "react-router-dom"
 import Sidebar from "./Sidebar"
 import ThemeToggle from "./ThemeToggle"
 import { Menu, Home as HomeIcon, LogOut } from "lucide-react"
@@ -7,8 +7,18 @@ import { useProperty } from "../context/PropertyContext"
 import { useAuth } from "../context/AuthContext"
 import Select from "./ui/Select"
 import AiStatusBanner from "./AiStatusBanner"
+import PageSkeleton from "./ui/Skeleton"
+import { PAGE_IMPORTS } from "../routes"
 
 export default function DashboardLayout() {
+  const { pathname } = useLocation()
+  // Fetch the other dashboard pages' code while idle, so switching pages never waits on a download
+  useEffect(() => {
+    const load = () => ["Reviews", "Analytics", "Properties", "Assistant"].forEach((p) => PAGE_IMPORTS[p]())
+    const id = "requestIdleCallback" in window ? requestIdleCallback(load, { timeout: 3000 }) : setTimeout(load, 1500)
+    return () => ("cancelIdleCallback" in window ? cancelIdleCallback(id) : clearTimeout(id))
+  }, [])
+
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { properties, selectedPropertyId, setSelectedPropertyId } = useProperty()
   const { user, logout } = useAuth()
@@ -100,7 +110,11 @@ export default function DashboardLayout() {
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           <AiStatusBanner />
-          <Outlet />
+          <Suspense fallback={<PageSkeleton label="Loading page" />}>
+            <div key={pathname} className="page-enter">
+              <Outlet />
+            </div>
+          </Suspense>
         </main>
       </div>
     </div>

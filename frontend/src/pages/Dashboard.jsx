@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react"
 import { Link } from "react-router-dom"
 import ReviewCard from "../components/ReviewCard"
-import Loader from "../components/ui/Loader"
 import Toast from "../components/ui/Toast"
 import Select from "../components/ui/Select"
 import CardSpotlight from "../components/fx/CardSpotlight"
@@ -9,6 +8,7 @@ import { MessageSquareText, Building2, Star, TrendingUp, ArrowUpRight, ArrowDown
 import { isSpamReview } from "../services/reviewFilters"
 import { PERIODS, aspectInsights, delta, inWindow, periodStats, spamSummary } from "../services/reviewMetrics"
 import { useProperty } from "../context/PropertyContext"
+import PageSkeleton from "../components/ui/Skeleton"
 import { useDismissibleError } from "../hooks/useDismissibleError"
 
 const accentMap = {
@@ -58,13 +58,7 @@ export default function Dashboard() {
     ? reviews
     : reviews.filter(r => r.propertyId === parseInt(selectedPropertyId))), [reviews, selectedPropertyId])
 
-  if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-        <Loader size="lg" text="Loading your reviews..." />
-      </div>
-    )
-  }
+  if (loading) return <PageSkeleton label="Loading your dashboard" variant="dashboard" />
 
   const periodReviews = inWindow(propertyReviews, period.days, now)
   const stats = periodStats(propertyReviews, period, now)

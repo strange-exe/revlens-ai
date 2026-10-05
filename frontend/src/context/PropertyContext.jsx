@@ -9,13 +9,31 @@ const initialState = {
   selectedPropertyId: "all",
   reviews: [],
   loading: true,
+  hydrated: false, // true once any data (cached or fresh) is on screen: later refreshes don't blank it
   error: null,
+}
+
+// Last data per user for this tab, so the dashboard paints instantly and refreshes underneath
+const cacheKey = (userId) => `revlens_data:v1:${userId}`
+function readCache(userId) {
+  try {
+    return JSON.parse(sessionStorage.getItem(cacheKey(userId)))
+  } catch {
+    return null
+  }
+}
+function writeCache(userId, data) {
+  try {
+    sessionStorage.setItem(cacheKey(userId), JSON.stringify(data))
+  } catch {
+    // storage full or blocked: the cache is only an optimisation
+  }
 }
 
 function propertyReducer(state, action) {
   switch (action.type) {
     case "FETCH_START":
-      return { ...state, loading: true, error: null }
+      return { ...state, loading: !state.hydrated, error: null }
     case "FETCH_SUCCESS":
       return {
         ...state,
@@ -23,6 +41,7 @@ function propertyReducer(state, action) {
         reviews: action.payload.reviews,
         error: null,
         loading: false,
+        hydrated: true,
       }
     case "FETCH_FAILURE":
       return { ...state, error: action.payload, loading: false }
@@ -32,6 +51,7 @@ function propertyReducer(state, action) {
         properties: [],
         reviews: [],
         loading: false,
+        hydrated: false,
         error: null,
       }
     case "SET_SELECTED_PROPERTY":
@@ -76,13 +96,21 @@ export function PropertyProvider({ children }) {
     }
   }, [])
 
+  const userId = user?.id
   useEffect(() => {
-    if (user) {
+    if (userId) {
+      const cached = readCache(userId)
+      if (cached) dispatch({ type: "FETCH_SUCCESS", payload: cached })
       refreshData()
     } else {
       dispatch({ type: "CLEAR_DATA" })
     }
-  }, [user, refreshData])
+  }, [userId, refreshData])
+
+  // Keep the tab cache in step with every change (fetches and edits alike)
+  useEffect(() => {
+    if (userId && state.hydrated) writeCache(userId, { properties, reviews })
+  }, [userId, state.hydrated, properties, reviews])
 
   const setSelectedPropertyId = useCallback((id) => {
     dispatch({ type: "SET_SELECTED_PROPERTY", payload: id })
