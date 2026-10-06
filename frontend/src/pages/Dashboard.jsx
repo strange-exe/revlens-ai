@@ -36,7 +36,7 @@ const accentMap = {
 }
 
 // Who flagged a spam review (backend `label_source`), in words a host understands
-const SOURCE_NAMES = { model: "AI model", llm: "AI", heuristic: "keyword rule", human: "you", unknown: "earlier version" }
+const SOURCE_NAMES = { model: "AI model", llm: "AI", heuristic: "keyword rule", human: "you", sample: "sample data", unknown: "earlier version" }
 
 function formatDelta(value, kind) {
   if (value == null) return null
@@ -66,10 +66,11 @@ export default function Dashboard() {
   const stats = periodStats(propertyReviews, period, now)
   const { current } = stats
   const insights = aspectInsights(periodReviews)
-  const spam = spamSummary(periodReviews)
+  const ownIds = new Set(properties.filter((p) => p.userId === user?.id).map((p) => p.id))
+  const spam = spamSummary(periodReviews, (r) => !ownIds.has(r.propertyId))
 
   const comparison = period.days ? `vs previous ${period.days} days` : null
-  const ownCount = properties.filter((p) => p.userId === user?.id).length
+  const ownCount = ownIds.size
   const sampleCount = properties.length - ownCount
   const cards = [
     { label: "Total Reviews", value: current.total, icon: <MessageSquareText size={18} />, accent: "brand",

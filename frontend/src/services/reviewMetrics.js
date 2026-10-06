@@ -82,11 +82,13 @@ export function aspectInsights(reviews) {
 }
 
 /** Spam count split by who flagged it, so the UI never attributes a manual flag to "AI". */
-export function spamSummary(reviews) {
+/** Spam count split by who flagged it. Reviews on the shared sample properties count as "sample", whoever
+ * labelled them, so a new host is never told they flagged reviews themselves. */
+export function spamSummary(reviews, isSample = () => false) {
   const spam = reviews.filter(isSpamReview)
   const bySource = {}
   for (const r of spam) {
-    const source = r.labelSource ?? "unknown"
+    const source = isSample(r) ? "sample" : r.labelSource ?? "unknown"
     bySource[source] = (bySource[source] ?? 0) + 1
   }
   return { count: spam.length, bySource }

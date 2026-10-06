@@ -66,4 +66,13 @@ describe("insights", () => {
     ])
     expect(s).toEqual({ count: 3, bySource: { human: 1, model: 1, unknown: 1 } })
   })
+
+  it("attributes spam on sample properties to the sample data, not the host", () => {
+    const s = spamSummary([
+      review("2026-10-01", { isSpam: true, labelSource: "human", propertyId: 1 }),
+      review("2026-10-01", { isSpam: true, labelSource: "human", propertyId: 9 }),
+      review("2026-10-01", { isSpam: true, labelSource: "llm", propertyId: 9 }),
+    ], (r) => r.propertyId === 9)
+    expect(s).toEqual({ count: 3, bySource: { human: 1, sample: 2 } })
+  })
 })
