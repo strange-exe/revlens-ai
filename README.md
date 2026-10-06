@@ -90,10 +90,8 @@ revlens-ai/
 │   │   ├── App.jsx           # Main React router & layout wrapper
 │   │   └── main.jsx          # Vite entrypoint
 │   └── package.json          # Frontend dependencies & scripts
-├── docs/                     # Project briefs & architectural documentation
-├── screenshots/              # Application screenshots for documentation & submission
-├── PROMPTS.md                # Prompt engineering log & iteration analysis
-└── README.md                 # Complete project capstone documentation
+├── screenshots/              # Application screenshots used in this README
+└── README.md                 # Project documentation
 ```
 
 ### Entity Relationship Diagram (ERD)
@@ -228,4 +226,3 @@ Frontend will load at `http://localhost:5173`.
 
 - **Google Gemini API** for generative text capabilities and review sentiment modeling.
 - **Supabase** for managed PostgreSQL cloud hosting.
-- **TBI GEU Internship Program (SIP26)** for curriculum modules, technical mentorship, and evaluation guidelines.
