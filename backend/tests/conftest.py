@@ -40,6 +40,8 @@ def _aspect_names():
 
 
 class FakeResponse:
+    status_code = 200
+
     def __init__(self, text):
         self._body = {"candidates": [{"content": {"parts": [{"text": text}]}}]}
 

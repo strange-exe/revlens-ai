@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import time
 import requests
 import logging
 from dataclasses import dataclass
@@ -95,17 +96,35 @@ def check_gemini_model() -> bool:
     return False
 
 
+RETRYABLE_STATUS = {500, 502, 503, 504}  # Gemini overloaded / transient; 429 and other 4xx won't improve on retry
+
+
 def _post_to_gemini(payload: dict, timeout: float = 10) -> dict:
+    """POST to Gemini, retrying once on a hung or dropped connection or a transient 5xx.
+
+    Gemini occasionally stalls a request that succeeds in ~2 s when resent, so the first attempt gets a
+    shorter deadline (60% of `timeout`) and the retry gets the full one. Worst case is 1.6x `timeout`."""
     global gemini_healthy
-    try:
-        # Key goes in a header, never the URL: requests puts the URL in exception messages, which we log
-        res = requests.post(GEMINI_URL, json=payload, headers={"x-goog-api-key": GEMINI_API_KEY}, timeout=timeout)
-        res.raise_for_status()
-    except Exception:
-        gemini_healthy = False
-        raise
-    gemini_healthy = True
-    return res.json()
+    for attempt, deadline in enumerate((timeout * 0.6, timeout)):
+        try:
+            # Key goes in a header, never the URL: requests puts the URL in exception messages, which we log
+            res = requests.post(GEMINI_URL, json=payload, headers={"x-goog-api-key": GEMINI_API_KEY}, timeout=deadline)
+            if res.status_code in RETRYABLE_STATUS and attempt == 0:
+                logger.warning(f"Gemini returned HTTP {res.status_code}; retrying once.")
+                time.sleep(0.5)
+                continue
+            res.raise_for_status()
+        except (requests.Timeout, requests.ConnectionError) as e:
+            if attempt == 0:
+                logger.warning(f"Gemini request failed ({type(e).__name__}); retrying once.")
+                continue
+            gemini_healthy = False
+            raise
+        except Exception:
+            gemini_healthy = False
+            raise
+        gemini_healthy = True
+        return res.json()
 
 
 def ai_status() -> dict:
