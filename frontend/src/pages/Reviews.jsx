@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react"
 import ReviewCard from "../components/ReviewCard"
-import { MessageSquareText, Search, Sparkles, ShieldAlert } from "lucide-react"
+import { MessageSquareText, Search, Sparkles, ShieldAlert, Plus } from "lucide-react"
+import AddReviewsDialog from "../components/AddReviewsDialog"
 import Button from "../components/ui/Button"
 import Input from "../components/ui/Input"
 import Modal from "../components/ui/Modal"
@@ -20,6 +21,7 @@ const DRAFT_LABELS = {
 export default function Reviews() {
   const { reviews, selectedPropertyId, unflagReview, deleteReview, loading, error, updateReviewResponse, generateReply } = useProperty()
 
+  const [addOpen, setAddOpen] = useState(false)
   const [viewState, setViewState] = useState({
     activeTab: "inbox", // "inbox" or "spam"
     search: "",
@@ -209,6 +211,11 @@ export default function Reviews() {
           <h1 className="font-heading text-2xl font-bold text-(--color-ink) dark:text-white">Reviews</h1>
           <p className="text-sm text-(--color-muted) dark:text-(--color-muted-dark) mt-1">Search and browse guest feedback</p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+        <button type="button" onClick={() => setAddOpen(true)}
+          className="press inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-(--color-brand-600) hover:bg-(--color-brand-700) text-white text-sm font-semibold cursor-pointer">
+          <Plus size={16} aria-hidden="true" /> Add reviews
+        </button>
         <div className="flex items-center gap-4 text-xs text-(--color-muted) dark:text-(--color-muted-dark) widget-card px-3.5 py-2 rounded-xl">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-(--color-brand-400)" />
@@ -222,7 +229,9 @@ export default function Reviews() {
             {activeTab === "inbox" ? inboxCount : spamCount} total
           </span>
         </div>
+        </div>
       </div>
+      <AddReviewsDialog isOpen={addOpen} onClose={() => setAddOpen(false)} />
 
       {/* Tabs - Inbox vs Spam */}
       <div className="mb-6 relative z-10">

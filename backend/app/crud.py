@@ -46,6 +46,16 @@ def create_review(db: Session, review: schemas.ReviewCreate, label_source: str, 
     return db_review
 
 
+def create_reviews(db: Session, rows: list[dict]) -> list:
+    """Insert several reviews in one transaction (an import chunk is all-or-nothing)."""
+    db_reviews = [models.Review(**row) for row in rows]
+    db.add_all(db_reviews)
+    db.commit()
+    for r in db_reviews:
+        db.refresh(r)
+    return db_reviews
+
+
 def update_review(db: Session, review_id: int, review: schemas.ReviewUpdate):
     db_review = get_review(db, review_id)
     if not db_review:

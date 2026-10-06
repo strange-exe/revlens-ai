@@ -44,6 +44,28 @@ class ReviewCreate(BaseModel):
     response: Optional[str] = None
 
 
+SOURCES_MAX_LEN = 40
+
+
+class ReviewImportItem(BaseModel):
+    guest_name: str = Field(..., min_length=1, max_length=120)
+    rating: int = Field(..., ge=1, le=5)
+    text: str = Field(..., min_length=1, max_length=5000)
+    date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")  # ISO date; the client normalises other formats
+    source: str = Field("Other", min_length=1, max_length=SOURCES_MAX_LEN)
+
+
+class ReviewBulkCreate(BaseModel):
+    property_id: int
+    # One chunk per request: the browser sends large imports in several chunks and shows progress
+    reviews: list[ReviewImportItem] = Field(..., min_length=1, max_length=25)
+
+
+class ReviewBulkResult(BaseModel):
+    created: list["ReviewOut"]
+    duplicates: list[int]  # indexes in the request that were skipped as already present
+
+
 class AskRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=500)
     property_id: Optional[int] = None

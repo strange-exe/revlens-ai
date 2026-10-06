@@ -58,6 +58,8 @@ function propertyReducer(state, action) {
       return { ...state, selectedPropertyId: action.payload }
     case "ADD_PROPERTY_SUCCESS":
       return { ...state, properties: [...state.properties, action.payload] }
+    case "ADD_REVIEWS_SUCCESS":
+      return { ...state, reviews: [...action.payload, ...state.reviews] }
     case "UPDATE_REVIEW_SUCCESS":
       return {
         ...state,
@@ -114,6 +116,33 @@ export function PropertyProvider({ children }) {
 
   const setSelectedPropertyId = useCallback((id) => {
     dispatch({ type: "SET_SELECTED_PROPERTY", payload: id })
+  }, [])
+
+  const addReview = useCallback(async (review) => {
+    const created = await api.createReview(review)
+    dispatch({ type: "ADD_REVIEWS_SUCCESS", payload: [created] })
+    return created
+  }, [])
+
+  // Sends rows in chunks of 25 (the API limit), so a large import shows progress and never hits a request
+  // timeout. Chunks already sent stay imported if a later one fails; re-running is safe (duplicates are skipped).
+  const importReviews = useCallback(async (propertyId, rows, onProgress) => {
+    const summary = { created: [], duplicates: 0, failed: 0, error: null }
+    for (let start = 0; start < rows.length; start += 25) {
+      const chunk = rows.slice(start, start + 25)
+      try {
+        const { created, duplicates } = await api.importReviews(propertyId, chunk)
+        summary.created.push(...created)
+        summary.duplicates += duplicates.length
+        if (created.length) dispatch({ type: "ADD_REVIEWS_SUCCESS", payload: created })
+      } catch (err) {
+        summary.failed = rows.length - start
+        summary.error = err.message || "Import failed"
+        break
+      }
+      onProgress?.(Math.min(start + chunk.length, rows.length))
+    }
+    return summary
   }, [])
 
   const addProperty = useCallback(async (newProp) => {
@@ -174,6 +203,8 @@ export function PropertyProvider({ children }) {
       selectedPropertyId,
       setSelectedPropertyId,
       addProperty,
+      addReview,
+      importReviews,
       reviews,
       unflagReview,
       deleteReview,
@@ -188,6 +219,8 @@ export function PropertyProvider({ children }) {
       selectedPropertyId,
       setSelectedPropertyId,
       addProperty,
+      addReview,
+      importReviews,
       reviews,
       unflagReview,
       deleteReview,

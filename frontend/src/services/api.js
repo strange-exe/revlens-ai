@@ -186,6 +186,18 @@ export const api = {
     return normalizeReview(data)
   },
 
+  // Import up to 25 reviews into one of your properties; returns the created reviews and skipped duplicates
+  async importReviews(propertyId, reviews) {
+    const data = await request('/reviews/bulk', {
+      method: 'POST',
+      body: JSON.stringify({
+        property_id: Number(propertyId),
+        reviews: reviews.map((r) => ({ guest_name: r.guest, rating: r.rating, text: r.text, date: r.date, source: r.source })),
+      }),
+    })
+    return { created: data.created.map(normalizeReview), duplicates: data.duplicates }
+  },
+
   async generateReply(id) {
     const data = await request(`/reviews/${id}/generate-reply`, {
       method: 'POST',

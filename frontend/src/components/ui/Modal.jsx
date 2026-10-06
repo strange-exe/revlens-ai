@@ -1,4 +1,4 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useId, useRef } from "react"
 import { useEffectEvent } from "../../hooks/useEffectEvent"
 import { X } from "lucide-react"
 
@@ -34,6 +34,16 @@ export default function Modal({
   const onModalClose = useEffectEvent(() => {
     if (onClose) onClose()
   })
+  const titleId = useId()
+  const dialogRef = useRef(null)
+
+  // Move focus into the dialog when it opens, and back to whatever opened it when it closes
+  useEffect(() => {
+    if (!isOpen) return
+    const opener = document.activeElement
+    dialogRef.current?.focus()
+    return () => opener?.focus?.()
+  }, [isOpen])
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -76,14 +86,19 @@ export default function Modal({
 
       {/* Dialog container */}
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        tabIndex={-1}
         className={`
-          relative z-10 w-full ${sizeMap[size]} rounded-2xl bg-white dark:bg-(--color-surface-elevated-dark) border border-(--color-border) dark:border-(--color-border-dark) shadow-2xl overflow-hidden transform transition-all duration-300 scale-100 animate-[in_0.2s_ease-out]
+          relative z-10 w-full outline-none ${sizeMap[size]} rounded-2xl bg-white dark:bg-(--color-surface-elevated-dark) border border-(--color-border) dark:border-(--color-border-dark) shadow-2xl overflow-hidden transform transition-all duration-300 scale-100 animate-[in_0.2s_ease-out]
         `}
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4.5 border-b border-(--color-border)/60 dark:border-(--color-border-dark)/60">
           {title ? (
-            <h3 className="font-heading text-lg font-bold text-(--color-ink) dark:text-white leading-none">
+            <h3 id={titleId} className="font-heading text-lg font-bold text-(--color-ink) dark:text-white leading-none">
               {title}
             </h3>
           ) : (
@@ -100,7 +115,7 @@ export default function Modal({
         </div>
 
         {/* Modal Body */}
-        <div className="px-6 py-5 max-h-[70vh] overflow-y-auto text-sm text-(--color-brand-600) dark:text-(--color-muted-dark) leading-relaxed">
+        <div className="px-6 py-5 max-h-[70vh] overflow-y-auto text-sm text-(--color-ink) dark:text-white/85 leading-relaxed">
           {children}
         </div>
 

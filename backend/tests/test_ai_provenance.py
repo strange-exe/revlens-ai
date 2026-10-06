@@ -24,8 +24,16 @@ def auth_header():
     return {"Authorization": f"Bearer {res.json()['access_token']}"}
 
 
+_own_property: dict[str, int] = {}  # one property per test user: reviews may only go to properties you own
+
+
 def new_review(auth_header, **fields):
-    body = {"property_id": 1, "property_name": "Hill House", "guest_name": "Asha",
+    token = auth_header["Authorization"]
+    if token not in _own_property:
+        res = client.post("/api/properties", json={"name": "Hill House", "location": "Shimla"}, headers=auth_header)
+        assert res.status_code == 201, res.text
+        _own_property[token] = res.json()["id"]
+    body = {"property_id": _own_property[token], "property_name": "Hill House", "guest_name": "Asha",
             "rating": 4, "text": "Spotless room, but the wifi kept dropping.", "date": "2026-10-04"} | fields
     res = client.post("/api/reviews", json=body, headers=auth_header)
     assert res.status_code == 201, res.text

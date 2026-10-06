@@ -222,15 +222,55 @@ def get_review(
     return review
 
 
+def owned_property(db: Session, property_id: int, user: models.User) -> models.Property:
+    """Writes go only to the user's own properties. Shared demo properties (no owner) are read-only,
+    otherwise one user's reviews would appear in everyone's demo data."""
+    prop = db.query(models.Property).filter(models.Property.id == property_id).first()
+    if prop is None:
+        raise HTTPException(status_code=404, detail="Property not found")
+    if prop.user_id != user.id:
+        raise HTTPException(status_code=403, detail="You can only add reviews to your own properties")
+    return prop
+
+
+def _dedupe_key(text: str) -> str:
+    return " ".join(text.lower().split())
+
+
+@app.post("/api/reviews/bulk", response_model=schemas.ReviewBulkResult, status_code=201)
+def import_reviews(
+    payload: schemas.ReviewBulkCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """Import a chunk of reviews into one of the user's properties. Reviews whose text is already on that
+    property (or repeated in the chunk) are skipped and reported, so re-running an import is safe."""
+    prop = owned_property(db, payload.property_id, current_user)
+    seen = {_dedupe_key(r.text) for r in crud.get_reviews(db, property_id=prop.id)}
+    fresh, duplicates = [], []
+    for i, item in enumerate(payload.reviews):
+        key = _dedupe_key(item.text)
+        if key in seen:
+            duplicates.append(i)
+            continue
+        seen.add(key)
+        fresh.append(item)
+    labels = ai.classify_reviews([(item.text, item.guest_name) for item in fresh])
+    rows = [
+        {**item.model_dump(), "property_id": prop.id, "property_name": prop.name, "sentiment": label.sentiment,
+         "is_spam": label.is_spam, "label_source": label.source, "aspects": label.aspects}
+        for item, label in zip(fresh, labels)
+    ]
+    return {"created": crud.create_reviews(db, rows) if rows else [], "duplicates": duplicates}
+
+
 @app.post("/api/reviews", response_model=schemas.ReviewOut, status_code=201)
 def create_review(
     review: schemas.ReviewCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    prop = db.query(models.Property).filter(models.Property.id == review.property_id).first()
-    if prop and prop.user_id and prop.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to add reviews to this property")
+    owned_property(db, review.property_id, current_user)
     
     # A sentiment sent by the client is a human label; otherwise classify it here
     if review.sentiment is not None:
