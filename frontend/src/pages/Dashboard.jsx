@@ -8,6 +8,7 @@ import { MessageSquareText, Building2, Star, TrendingUp, ArrowUpRight, ArrowDown
 import { isSpamReview } from "../services/reviewFilters"
 import { PERIODS, aspectInsights, delta, inWindow, periodStats, spamSummary } from "../services/reviewMetrics"
 import { useProperty } from "../context/PropertyContext"
+import { useAuth } from "../context/AuthContext"
 import PageSkeleton from "../components/ui/Skeleton"
 import { useDismissibleError } from "../hooks/useDismissibleError"
 
@@ -47,6 +48,7 @@ function formatDelta(value, kind) {
 
 export default function Dashboard() {
   const { reviews, properties, selectedPropertyId, loading, error } = useProperty()
+  const { user } = useAuth()
   const [toastMessage, dismissToast] = useDismissibleError(error)
   const [periodKey, setPeriodKey] = useState("all")
   const period = PERIODS.find((p) => p.key === periodKey)
@@ -67,10 +69,14 @@ export default function Dashboard() {
   const spam = spamSummary(periodReviews)
 
   const comparison = period.days ? `vs previous ${period.days} days` : null
+  const ownCount = properties.filter((p) => p.userId === user?.id).length
+  const sampleCount = properties.length - ownCount
   const cards = [
     { label: "Total Reviews", value: current.total, icon: <MessageSquareText size={18} />, accent: "brand",
       change: formatDelta(delta(stats, "total"), "count") },
-    { label: "Properties", value: properties.length, icon: <Building2 size={18} />, accent: "violet", change: null },
+    // Only the host's own properties: the shared sample properties are noted separately, never counted as theirs
+    { label: "Your properties", value: ownCount, note: sampleCount ? `+${sampleCount} sample${sampleCount > 1 ? "s" : ""}` : null,
+      icon: <Building2 size={18} />, accent: "violet", change: null },
     { label: "Avg Rating", value: current.avgRating?.toFixed(1) ?? "n/a", icon: <Star size={18} />, accent: "accent",
       change: formatDelta(delta(stats, "avgRating"), "rating") },
     { label: "Positive Rate", value: current.positiveRate == null ? "n/a" : `${Math.round(current.positiveRate * 100)}%`,
@@ -149,6 +155,7 @@ export default function Dashboard() {
               <p className="font-heading text-2xl sm:text-3xl font-bold text-(--color-ink) dark:text-white leading-none tracking-tight">{s.value}</p>
               <p className="text-xs text-(--color-muted) dark:text-(--color-muted-dark) mt-1.5 font-medium">
                 {s.label}{s.change && comparison ? <span className="opacity-70"> · {comparison}</span> : null}
+                {s.note ? <span className="block sm:inline opacity-70"><span className="hidden sm:inline"> · </span>{s.note}</span> : null}
               </p>
             </CardSpotlight>
           )
