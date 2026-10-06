@@ -45,9 +45,9 @@
   --color-ink:                  #19171f; /* primary text: violet is reserved for actions */
 
   /* ── Surfaces (Dark Obsidian) ── */
-  --color-surface-dark:              #000000;
-  --color-surface-elevated-dark:     #09090b;
-  --color-surface-muted-dark:        #18181b;
+  --color-surface-dark:              #0c0b10; /* off-black, violet-tinted like ink: pure #000 flattens depth */
+  --color-surface-elevated-dark:     #16151b;
+  --color-surface-muted-dark:        #201f26;
   --color-border-dark:               rgba(255, 255, 255, 0.1);
   --color-muted-dark:                #a1a1aa;
 }

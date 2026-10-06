@@ -127,7 +127,7 @@ function LoginForm({ signup }) {
         <div className="flex flex-col justify-center gap-8 px-12 xl:px-16 py-20 max-w-xl">
           <div>
             <p className="text-sm font-semibold text-white/70">RevLens for hosts</p>
-            <h2 className="mt-2 font-heading text-3xl font-bold tracking-[-0.03em] leading-tight text-white">
+            <h2 className="mt-2 font-heading text-3xl font-bold tracking-[-0.03em] leading-tight text-white text-balance">
               Every review, marked up for you.
             </h2>
           </div>
@@ -215,7 +215,7 @@ function LoginForm({ signup }) {
               iconPosition="right"
               className="py-3.5 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all mt-6"
             >
-              {isSignup ? "Create Account" : "Sign In"}
+              {isSignup ? "Create account" : "Sign in"}
             </Button>
           </form>
 
@@ -226,7 +226,7 @@ function LoginForm({ signup }) {
               onClick={() => dispatch({ type: "TOGGLE_SIGNUP" })}
               className="font-semibold text-(--color-brand-500) dark:text-(--color-brand-400) hover:underline cursor-pointer bg-transparent border-none p-0 inline-block font-sans"
             >
-              {isSignup ? "Sign In" : "Sign Up"}
+              {isSignup ? "Sign in" : "Start free"}
             </button>
           </p>
 

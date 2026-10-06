@@ -107,7 +107,7 @@ export default function ReviewDemo({ compact = false }) {
       <figure ref={ref} data-play={play || undefined} role={compact ? undefined : "tabpanel"} aria-labelledby={compact ? undefined : `demo-${id}`}
         className="demo relative rounded-xl bg-(--color-surface-elevated) dark:bg-(--color-surface-elevated-dark) border border-(--color-border) dark:border-(--color-border-dark) shadow-[0_1px_0_rgb(0_0_0/0.04),0_24px_48px_-24px_rgb(25_23_31/0.25)]">
         <figcaption className="flex items-center justify-between gap-3 px-5 sm:px-6 py-3.5 border-b border-(--color-border) dark:border-(--color-border-dark) text-xs text-(--color-muted) dark:text-(--color-muted-dark)">
-          <span><span className="font-semibold text-(--color-ink) dark:text-white">{sample.guest}</span> · {sample.property} · sample review</span>
+          <span><span className="font-semibold text-(--color-ink) dark:text-white">{sample.guest}</span> · {sample.property}</span>
           <span className="flex gap-0.5" role="img" aria-label={`${sample.rating} out of 5 stars`}>
             {Array.from({ length: 5 }, (_, i) => <Star key={i} size={12} aria-hidden="true" className={i < sample.rating ? "fill-amber-400 text-amber-400" : "text-(--color-border) dark:text-white/20"} />)}
           </span>

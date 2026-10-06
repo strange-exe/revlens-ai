@@ -43,8 +43,8 @@ export default function Pricing() {
             Free while we&rsquo;re in beta.
           </h1>
           <p className="mt-5 text-lg leading-relaxed text-(--color-muted) dark:text-(--color-muted-dark) max-w-2xl">
-            Every feature is free today, with no card and no limits on properties or reviews. Paid plans come later, and
-            we&rsquo;ll tell you before anything changes.
+            Every feature is free today: no card, no limits on properties or reviews. We&rsquo;ll tell you before paid
+            plans arrive.
           </p>
         </div>
       </section>

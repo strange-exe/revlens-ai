@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Link, NavLink } from "react-router-dom"
 import { Menu, X } from "lucide-react"
 import ThemeToggle from "./ThemeToggle"
@@ -22,24 +22,28 @@ export default function Navbar() {
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const topSentinel = useRef(null)
 
+  // Border appears once the page leaves the top: one observer callback instead of a handler on every scroll frame
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
-    onScroll()
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
+    const observer = new IntersectionObserver(([entry]) => setScrolled(!entry.isIntersecting))
+    observer.observe(topSentinel.current)
+    return () => observer.disconnect()
   }, [])
 
   const actions = user ? (
     <Link to="/dashboard" className={primary} onClick={() => setOpen(false)}>Open dashboard</Link>
   ) : (
     <>
-      <NavLink to="/login" className={linkClass} onClick={() => setOpen(false)}>Log in</NavLink>
+      <NavLink to="/login" className={linkClass} onClick={() => setOpen(false)}>Sign in</NavLink>
       <Link to="/login?mode=signup" className={primary} onClick={() => setOpen(false)}>Start free</Link>
     </>
   )
 
   return (
+    <>
+    {/* Sits at the top of the document (no positioned ancestor); leaving view means the page has scrolled */}
+    <div ref={topSentinel} aria-hidden="true" className="absolute top-0 left-0 h-2 w-px pointer-events-none" />
     <nav className={`fixed top-0 inset-x-0 z-50 border-b bg-(--color-surface) dark:bg-(--color-surface-dark) transition-colors duration-200 ${scrolled || open
       ? "border-(--color-border) dark:border-(--color-border-dark)" : "border-transparent"}`}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">
@@ -76,5 +80,6 @@ export default function Navbar() {
         </div>
       )}
     </nav>
+    </>
   )
 }

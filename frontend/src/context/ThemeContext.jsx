@@ -2,7 +2,7 @@ import React, { createContext, use, useEffect, useState, useMemo } from "react"
 
 const ThemeContext = createContext()
 
-const THEME_COLORS = { light: "#155c3d", dark: "#000000" }
+const THEME_COLORS = { light: "#f7f6f2", dark: "#0c0b10" } // browser chrome matches the page surface
 
 // Read once at module level to prevent repeated reads on every render
 const initialStoredTheme = typeof window !== "undefined" ? localStorage.getItem("theme") : null
