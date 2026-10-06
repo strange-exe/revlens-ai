@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef } from "react"
+import { createPortal } from "react-dom"
 import { useEffectEvent } from "../../hooks/useEffectEvent"
 import { X } from "lucide-react"
 
@@ -74,7 +75,9 @@ export default function Modal({
 
   if (!isOpen) return null
 
-  return (
+  // Portal to <body>: pages animate in with a transform, which creates a stacking context that would
+  // otherwise keep the overlay below the sticky header and sidebar
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Sibling Backdrop button for accessibility */}
       <button
@@ -126,6 +129,7 @@ export default function Modal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
