@@ -132,3 +132,12 @@ def test_status_flips_to_fallback_when_gemini_starts_failing(auth_header, gemini
 
 def test_status_requires_login():
     assert client.get("/api/ai/status").status_code in (401, 403)
+
+
+def test_reply_prompt_forbids_claiming_unconfirmed_actions(gemini):
+    gemini.reply = "Dear Neha, thank you for staying with us."
+    draft = ai.generate_management_response("Neha", "Cedar Homestay", 2, "The geyser never heated up.")
+    assert draft.source == "llm"
+    prompt = gemini[-1]["json"]["contents"][0]["parts"][0]["text"]
+    assert "Never claim that anything has already been fixed" in prompt
+    assert "using only details from the review" in prompt
