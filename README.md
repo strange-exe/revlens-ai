@@ -13,17 +13,19 @@
 
 ## Screenshots
 
-![Login Page](screenshots/1_login.png)
-*Figure 1: User Login & JWT Authentication Interface*
+*Sample property and reviews; labels and the reply draft come from the live classifier and Gemini.*
 
-![Dashboard & Reviews](screenshots/2_read.png)
-*Figure 2: Real-time Analytics Dashboard & Guest Review Feed*
+![RevLens landing page with an interactive labelled sample review](screenshots/1_home.webp)
+*Figure 1: Landing page with an interactive sample review, labelled by aspect*
 
-![AI Response Generation](screenshots/ai_reply_verification.png)
-*Figure 3: AI-Generated Guest Management Response powered by Google Gemini API*
+![Dashboard overview for one property](screenshots/2_dashboard.webp)
+*Figure 2: Dashboard: rating, sentiment, the most criticised aspect and recent reviews*
 
-![Create Property & Review](screenshots/3_create.png)
-*Figure 4: Property Registration & Review Submission Flow*
+![AI reply draft for a negative review](screenshots/3_ai_reply.webp)
+*Figure 3: AI reply draft that addresses the guest's actual complaints, edited by the host before sending*
+
+![Bulk review import preview](screenshots/4_import.webp)
+*Figure 4: Importing reviews from a spreadsheet: per-row preview with duplicates and errors flagged*
 
 ---
 
