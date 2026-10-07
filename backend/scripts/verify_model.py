@@ -1,8 +1,8 @@
 """Before deploying: fetch the model exactly as Render will, run the backend with it, and check it really works.
 
-    cd backend
-    set MODEL_URL=https://huggingface.co/<you>/revlens-classifier/resolve/main/deberta-v3-xsmall-s13.zip
-    set MODEL_URL_TOKEN=<read-only token>      (PowerShell: $env:MODEL_URL_TOKEN = "...")
+    cd backend                                  (PowerShell; run from backend/, not the repo root)
+    $env:MODEL_URL = "https://huggingface.co/<you>/revlens-classifier/resolve/main/deberta-v3-xsmall-s13.zip"
+    $env:MODEL_URL_TOKEN = "<read-only token>"
     venv\\Scripts\\python -m scripts.verify_model
 
 Steps (any failure stops with a clear message, nothing is deployed or changed):
