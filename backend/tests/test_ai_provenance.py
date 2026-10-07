@@ -141,3 +141,14 @@ def test_reply_prompt_forbids_claiming_unconfirmed_actions(gemini):
     prompt = gemini[-1]["json"]["contents"][0]["parts"][0]["text"]
     assert "Never claim that anything has already been fixed" in prompt
     assert "using only details from the review" in prompt
+
+
+def test_guest_names_never_reach_gemini(gemini):
+    name = "Priyanka Venkataraman"
+    ai.analyze_review_sentiment_and_spam("The geyser never heated up.", name)
+    ai.classify_reviews([("Lovely stay.", name), ("Cold room.", name)])
+    gemini.reply = "Dear [[GUEST]], thank you for staying with us."
+    draft = ai.generate_management_response(name, "Cedar Homestay", 2, "The geyser never heated up.")
+    prompts = [json.dumps(call["json"]) for call in gemini]
+    assert len(prompts) == 3 and not any(name in p or "Priyanka" in p for p in prompts)
+    assert draft.text == f"Dear {name}, thank you for staying with us."  # the name is put back locally
