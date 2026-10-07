@@ -4,6 +4,7 @@ Phase 2 (evaluation set) and Phase 3 (models) of the RevLens AI plan. The goal: 
 LLM" with a small model that is **trained and measured**, served on CPU in the backend.
 
 Read [DATASETS.md](DATASETS.md) first. It explains where every label comes from and what the numbers can't tell you.
+The results, the error analysis and the changes they led to are in [RESULTS.md](RESULTS.md).
 
 ## Quick start (B200)
 ```bash
