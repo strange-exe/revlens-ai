@@ -148,7 +148,7 @@ function LoginForm({ signup }) {
               {isSignup ? "Create your free account" : "Welcome back"}
             </h1>
             <p className="mt-2 text-sm text-(--color-muted) dark:text-(--color-muted-dark)">
-              {isSignup ? "Free during the beta. No card needed." : "Sign in to your dashboard"}
+              {isSignup ? "Free. No card needed." : "Sign in to your dashboard"}
             </p>
           </div>
 

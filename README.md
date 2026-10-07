@@ -221,6 +221,7 @@ Frontend will load at `http://localhost:5173`.
 - **Render Free Tier Cold Start**: The backend hosted on Render's free web service spins down after 15 minutes of inactivity. Initial requests after idle may take 30–50 seconds to wake up the server.
 - **Gemini API Quota**: The free tier is rate-limited. When Gemini is unavailable, RevLens falls back to keyword rules and template replies, and labels them as such (`heuristic` / `template`) instead of presenting them as AI output.
 - **Model evaluation**: The fine-tuned classifier (0.80 sentiment macro-F1 on a 40k-review held-out test set; scores, error analysis and limits in [`ml/RESULTS.md`](ml/RESULTS.md)) is trained and measured on public TripAdvisor hotel reviews (academic use only, see [`ml/DATASETS.md`](ml/DATASETS.md)); expect some domain shift on Indian homestay reviews.
+- **Free and non-commercial**: because the model's training data is licensed for research use only, RevLens is offered free of charge with no paid plans.
 
 ---
 

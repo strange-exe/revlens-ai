@@ -2,9 +2,10 @@ import { Link } from "react-router-dom"
 import { ArrowRight, Check, Plus } from "lucide-react"
 import SectionHead from "../components/SectionHead"
 
-// Only what the app does today. There is no billing yet: paid plans are shown as planned, with no feature promises.
-const BETA_FEATURES = [
-  "Unlimited properties and reviews during the beta",
+// Only what the app does today. RevLens is free and non-commercial (its model is trained on academic-use data, see
+// ml/DATASETS.md), so the paid tiers are shown as not planned, with no feature promises.
+const FREE_FEATURES = [
+  "Unlimited properties and reviews",
   "Sentiment and spam labels, with the source of every label",
   "Six aspects per review, from cleanliness to WiFi",
   "Reply drafts you edit before sending",
@@ -13,24 +14,24 @@ const BETA_FEATURES = [
 ]
 
 const plans = [
-  { name: "Beta", price: "Free", period: "", status: "Available now",
+  { name: "Free", price: "₹0", period: "", status: "Available now",
     description: "Everything RevLens does today, for any number of properties.",
-    features: BETA_FEATURES, cta: { to: "/login?mode=signup", label: "Start free" } },
-  { name: "Professional", price: "₹1,499", period: "/month", status: "Planned",
-    description: "For hosts running several properties, once the beta ends." },
-  { name: "Enterprise", price: "Custom", period: "", status: "Planned",
+    features: FREE_FEATURES, cta: { to: "/login?mode=signup", label: "Start free" } },
+  { name: "Professional", price: "₹1,499", period: "/month", status: "Not planned",
+    description: "For hosts running several properties." },
+  { name: "Enterprise", price: "Custom", period: "", status: "Not planned",
     description: "For chains and agencies with large portfolios." },
 ]
 
 const faqs = [
   { q: "Is RevLens free?",
-    a: "Yes. During the beta every feature is free and needs no card. The paid plans on this page are planned and can't be bought yet. We'll announce pricing before anything changes." },
+    a: "Yes. Every feature is free and needs no card, and there are no plans to charge. RevLens is non-commercial: its AI model is trained on review data licensed for research use only. The paid tiers on this page are not offered." },
   { q: "Which review platforms are supported?",
     a: "You can add reviews from any platform, such as Airbnb, Booking.com, Google, TripAdvisor or MakeMyTrip, and tag where each came from. RevLens doesn't connect to those platforms automatically yet." },
   { q: "How accurate is the AI sentiment analysis?",
-    a: "We measure it on a frozen test set of about 40,000 hotel reviews, including where the model goes wrong, rather than quoting a single headline number. Every label in the app also shows whether it came from the AI model, an LLM, a keyword rule, or you." },
+    a: "Our model scores 0.80 macro-F1 on a frozen test set of about 40,000 hotel reviews, and we publish where it goes wrong. Homestay reviews may score lower, because the model learned from hotels. Every label in the app shows whether it came from the AI model, an LLM, a keyword rule, or you." },
   { q: "What happens to my reviews?",
-    a: "They're stored in your account. To label them, draft replies and answer questions, review text is sent to Google's Gemini API (and, once deployed, to our own model). Nothing is posted or sent to a guest without you." },
+    a: "They're stored in your account. Labels come from our own model, which runs on our server. To draft replies and answer questions, review text is sent to Google's Gemini API, which also labels reviews if our model is unavailable. Nothing is posted or sent to a guest without you." },
 ]
 
 export default function Pricing() {
@@ -40,11 +41,10 @@ export default function Pricing() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-sm font-semibold text-(--color-brand-600) dark:text-(--color-brand-300)">Pricing</p>
           <h1 className="mt-3 font-heading text-[2.5rem] leading-[1.05] sm:text-6xl font-bold tracking-[-0.035em] text-(--color-ink) dark:text-white max-w-3xl text-balance">
-            Free while we&rsquo;re in beta.
+            RevLens is free.
           </h1>
           <p className="mt-5 text-lg leading-relaxed text-(--color-muted) dark:text-(--color-muted-dark) max-w-2xl">
-            Every feature is free today: no card, no limits on properties or reviews. We&rsquo;ll tell you before paid
-            plans arrive.
+            Every feature, no card, no limits on properties or reviews. There are no plans to charge.
           </p>
         </div>
       </section>
@@ -85,7 +85,7 @@ export default function Pricing() {
                 ) : (
                   <p className="mt-8 flex items-start gap-3 text-sm">
                     <Plus size={16} aria-hidden="true" className="shrink-0 mt-0.5" />
-                    Everything in Beta. Plan details will be published before launch.
+                    Not offered. Everything RevLens does is in the free plan.
                   </p>
                 )}
               </article>

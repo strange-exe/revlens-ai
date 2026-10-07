@@ -125,7 +125,7 @@ export default function Home() {
               Start with the reviews you already have.
             </h2>
             <p className="mt-3 text-base text-(--color-muted) dark:text-(--color-muted-dark)">
-              Free during the beta. No card needed.
+              Free. No card needed.
             </p>
           </div>
           <div className="flex items-center gap-6">

@@ -17,6 +17,9 @@ states **no licence**, and the dataset README tells users to respect the origina
 - Never commit or publish the raw or processed data (`ml/.gitignore` excludes `data/`).
 - Don't ship a model trained on it in a commercial product, and don't describe the data as Apache-licensed.
 - Store the trained model privately (see README: `MODEL_URL` should point to private storage).
+- **How RevLens complies:** RevLens is free and non-commercial, and the trained model stays in a private repo.
+  Charging for RevLens would need a model retrained only on data licensed for that use (planned: reviews and
+  corrections from hosts who opt in).
 
 ### Verified quirks
 - **`hotel_id` is unique per review** (201,295 ids for 201,295 rows), so despite its name it is a review id.
