@@ -5,7 +5,7 @@ import logging
 import os
 import requests
 
-from . import models, schemas, crud, auth, ai
+from . import models, schemas, crud, auth, ai, migrate
 from .database import get_db
 
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +38,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_event():
+    migrate.upgrade_to_head()  # before seeding, so seed data always lands in the current schema
     ai.load_classifier()
     ai.check_gemini_model()
     db = next(get_db())
