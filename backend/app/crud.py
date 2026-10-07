@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from . import models, schemas
@@ -127,6 +129,27 @@ def get_user(db: Session, user_id: int):
 
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
+
+
+def set_training_consent(db: Session, user: models.User, consent: bool, version: str) -> models.User:
+    """Opt in (stamp time + policy version) or withdraw (clear both). Withdrawal excludes the account from
+    every future training export; data already used in a trained model can't be removed from that model."""
+    user.training_consent_at = datetime.now(timezone.utc) if consent else None
+    user.training_consent_version = version if consent else None
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def delete_account(db: Session, user: models.User) -> dict:
+    """Delete the user, their properties and every review on those properties, in one transaction."""
+    property_ids = [p.id for p in db.query(models.Property.id).filter(models.Property.user_id == user.id)]
+    reviews = db.query(models.Review).filter(models.Review.property_id.in_(property_ids)).delete(synchronize_session=False) \
+        if property_ids else 0
+    properties = db.query(models.Property).filter(models.Property.user_id == user.id).delete(synchronize_session=False)
+    db.delete(user)
+    db.commit()
+    return {"properties": properties, "reviews": reviews}
 
 
 def create_user(db: Session, user: schemas.UserCreate, hashed_password: str):

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, Text, JSON
+from sqlalchemy import Column, Integer, String, Float, Boolean, Text, JSON, DateTime
 from .database import Base
 
 
@@ -11,6 +11,10 @@ class User(Base):
     full_name = Column(String, nullable=True)
     google_id = Column(String, nullable=True, unique=True)
     picture = Column(String, nullable=True)
+    # Opt-in to letting this account's reviews and corrections train RevLens's model. NULL = not given (default),
+    # and only accounts with a consent timestamp may ever be included in a training export.
+    training_consent_at = Column(DateTime(timezone=True), nullable=True)
+    training_consent_version = Column(String, nullable=True)  # which wording of the privacy policy they agreed to
 
 
 class Property(Base):

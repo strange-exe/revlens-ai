@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field
+from datetime import datetime
 from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
 # ── Property Schemas ──────────────────────────────────────────────────────
@@ -114,9 +116,19 @@ class UserOut(BaseModel):
     full_name: Optional[str]
     picture: Optional[str] = None
     google_id: Optional[str] = None
+    training_consent_at: Optional[datetime] = None
+    training_consent_version: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class TrainingConsentUpdate(BaseModel):
+    consent: bool
+
+
+class AccountDelete(BaseModel):
+    confirm_email: str = Field(..., max_length=320)  # must match the account's email: guards against misclicks
 
 
 class UserLogin(BaseModel):

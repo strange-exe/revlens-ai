@@ -136,6 +136,27 @@ def google_auth(req: schemas.GoogleLoginRequest, db: Session = Depends(get_db)):
 def get_me(current_user: models.User = Depends(auth.get_current_user)):
     return current_user
 
+
+# Bump when the privacy policy's training-data section changes, so we know which wording each opt-in agreed to
+TRAINING_CONSENT_VERSION = "2026-10-07"
+
+
+@app.put("/api/auth/me/training-consent", response_model=schemas.UserOut)
+def update_training_consent(body: schemas.TrainingConsentUpdate, db: Session = Depends(get_db),
+                            current_user: models.User = Depends(auth.get_current_user)):
+    return crud.set_training_consent(db, current_user, body.consent, TRAINING_CONSENT_VERSION)
+
+
+@app.delete("/api/auth/me", status_code=200)
+def delete_me(body: schemas.AccountDelete, db: Session = Depends(get_db),
+              current_user: models.User = Depends(auth.get_current_user)):
+    if body.confirm_email.strip().lower() != current_user.email.lower():
+        raise HTTPException(status_code=400, detail="Type your account's email address to confirm deletion.")
+    user_id = current_user.id  # read before deleting: the row is gone after commit
+    deleted = crud.delete_account(db, current_user)
+    logger.info(f"Account {user_id} deleted ({deleted['properties']} properties, {deleted['reviews']} reviews).")
+    return {"deleted": True, **deleted}
+
 # HEAD is included because uptime monitors (e.g. UptimeRobot) probe with HEAD by default
 @app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
