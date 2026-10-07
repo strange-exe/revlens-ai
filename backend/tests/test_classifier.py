@@ -59,3 +59,33 @@ def test_real_exported_model_loads_and_predicts():
     result = OnnxClassifier(os.environ["TEST_MODEL_DIR"]).predict(["Spotless room but the wifi kept dropping."])[0]
     assert result["sentiment"] in ai.SENTIMENTS and isinstance(result["is_spam"], bool)
     assert set(result["aspects_all"]) == set(ai.ASPECT_GUIDE)
+
+
+def test_fit_ids_keeps_short_reviews_whole_and_long_ones_head_and_tail():
+    from app.classifier import fit_ids
+    short = [101, 5, 6, 102]
+    assert fit_ids(short, 8) is short
+    long = [101] + list(range(1, 20)) + [102]          # [CLS] 1..19 [SEP], 21 tokens
+    fitted = fit_ids(long, 8)
+    assert len(fitted) == 8
+    assert fitted == [101, 1, 2, 3, 17, 18, 19, 102]  # first half and last half; [CLS]/[SEP] kept at the ends
+
+
+@pytest.mark.skipif(not os.getenv("TEST_MODEL_DIR"), reason="set TEST_MODEL_DIR to an exported model to run")
+def test_real_model_sees_the_end_of_a_long_review():
+    from app.classifier import OnnxClassifier
+    model = OnnxClassifier(os.environ["TEST_MODEL_DIR"])
+    praise = "The staff were lovely and the breakfast was great. " * 40   # far past 256 tokens
+    verdict = "But the room was filthy, the shower was broken and we left early. Terrible, never again."
+    assert model.predict([praise + verdict])[0]["sentiment"] != "positive"
+
+
+@pytest.mark.skipif(not os.getenv("TEST_MODEL_DIR"), reason="set TEST_MODEL_DIR to an exported model to run")
+def test_real_model_labels_do_not_depend_on_batch_mates():
+    from app.classifier import OnnxClassifier
+    model = OnnxClassifier(os.environ["TEST_MODEL_DIR"])
+    texts = ["Lovely host and spotless room.", "The WiFi kept dropping and breakfast was cold. " * 30,
+             "Average stay, nothing special.", "Terrible. Dirty sheets and rude staff."]
+    together = model.predict(texts)
+    alone = [model.predict([t])[0] for t in texts]
+    assert [r["sentiment_probs"] for r in together] == [r["sentiment_probs"] for r in alone]

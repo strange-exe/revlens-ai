@@ -58,10 +58,17 @@ def load_predictor(kind: str, path: str | None):
         from .model import MultiTaskModel
         model, tokenizer, config = MultiTaskModel.load(Path(path))
 
+        import sys
+        sys.path.insert(0, str(BACKEND_DIR))
+        from app.classifier import fit_ids  # same long-review rule as production: keep the start and the end
+
         def predict(texts):
-            enc = tokenizer(list(texts), truncation=True, max_length=config["max_len"], padding=True, return_tensors="pt")
+            ids = [fit_ids(x, config["max_len"]) for x in tokenizer(list(texts), truncation=False, verbose=False)["input_ids"]]
+            width, pad = max(map(len, ids)), tokenizer.pad_token_id
+            input_ids = torch.tensor([x + [pad] * (width - len(x)) for x in ids])
+            attention_mask = torch.tensor([[1] * len(x) + [0] * (width - len(x)) for x in ids])
             with torch.no_grad():
-                s, p, a = model(enc["input_ids"], enc["attention_mask"])
+                s, p, a = model(input_ids, attention_mask)
             probs = s.softmax(-1).numpy()
             idx = a.argmax(-1).numpy()
             return pd.DataFrame({
