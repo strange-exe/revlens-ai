@@ -196,3 +196,6 @@ backend/revlens.db
 
 # B200 bundle built locally (contains only code, but is a build artifact)
 revlens-b200.zip
+
+# Fine-tuned model downloaded by scripts.fetch_model (MODEL_DIR=model): private, large, never committed
+backend/model/
