@@ -1,6 +1,6 @@
 import Logo from "./Logo"
 import { NavLink, Link } from "react-router-dom"
-import { LayoutDashboard, MessageSquareText, BarChart3, Building, X, Sparkles, Home as HomeIcon, LogOut } from "lucide-react"
+import { LayoutDashboard, MessageSquareText, BarChart3, Building, X, Sparkles, Home as HomeIcon, LogOut, Settings } from "lucide-react"
 
 const links = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, end: true },
@@ -8,6 +8,7 @@ const links = [
   { to: "/dashboard/reviews", label: "Reviews", icon: MessageSquareText, end: false },
   { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3, end: false },
   { to: "/dashboard/assistant", label: "AI Assistant", icon: Sparkles, end: false },
+  { to: "/dashboard/settings", label: "Settings", icon: Settings, end: false },
 ]
 
 export default function Sidebar({ isOpen, onClose, logout }) {

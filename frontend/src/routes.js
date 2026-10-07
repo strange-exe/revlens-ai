@@ -5,4 +5,5 @@ export const PAGE_IMPORTS = {
   Analytics: () => import("./pages/Analytics"),
   Properties: () => import("./pages/Properties"),
   Assistant: () => import("./pages/Assistant"),
+  Settings: () => import("./pages/Settings"),
 }

@@ -20,6 +20,9 @@ const Login = lazy(() => import("./pages/Login"))
 const Pricing = lazy(() => import("./pages/Pricing"))
 const Assistant = lazy(PAGE_IMPORTS.Assistant)
 const Properties = lazy(PAGE_IMPORTS.Properties)
+const Settings = lazy(PAGE_IMPORTS.Settings)
+const Privacy = lazy(() => import("./pages/Privacy"))
+const Terms = lazy(() => import("./pages/Terms"))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -45,6 +48,8 @@ export default function App() {
                 <Route path="about" element={<About />} />
                 <Route path="pricing" element={<Pricing />} />
                 <Route path="login" element={<Login />} />
+                <Route path="privacy" element={<Privacy />} />
+                <Route path="terms" element={<Terms />} />
               </Route>
               
               {/* Protected Dashboard Routes */}
@@ -55,6 +60,7 @@ export default function App() {
                   <Route path="analytics" element={<Analytics />} />
                   <Route path="assistant" element={<Assistant />} />
                   <Route path="properties" element={<Properties />} />
+                  <Route path="settings" element={<Settings />} />
                 </Route>
               </Route>
             </Routes>

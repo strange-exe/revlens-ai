@@ -22,7 +22,9 @@ export default function Footer() {
                 { to: "/dashboard", label: "Dashboard" },
                 { to: "/pricing", label: "Pricing" },
                 { to: "/about", label: "About" },
-                { to: "/login", label: "Login" },
+                { to: "/login", label: "Sign in" },
+                { to: "/privacy", label: "Privacy" },
+                { to: "/terms", label: "Terms" },
               ].map((l) => (
                 <Link key={l.to} to={l.to} className="block text-sm text-(--color-muted) dark:text-(--color-muted-dark) hover:text-(--color-brand-500) dark:hover:text-(--color-brand-300) transition-colors">
                   {l.label}

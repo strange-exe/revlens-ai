@@ -14,6 +14,8 @@ function normalizeUser(u) {
     fullName: u.fullName || u.full_name || null,
     picture: u.picture || null,
     googleId: u.googleId || u.google_id || null,
+    trainingConsentAt: u.trainingConsentAt ?? u.training_consent_at ?? null,
+    trainingConsentVersion: u.trainingConsentVersion ?? u.training_consent_version ?? null,
   }
 }
 
@@ -107,14 +109,27 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  const setTrainingConsent = useCallback(async (consent) => {
+    const updated = await api.setTrainingConsent(consent)
+    localStorage.setItem(USER_KEY, JSON.stringify(updated))
+    setUser(normalizeUser(updated))
+    return updated
+  }, [])
+
+  // Deletes on the server only. The caller leaves the dashboard and then calls logout(): logging out while still
+  // on a protected page would let the route guard redirect to /login first.
+  const deleteAccount = useCallback((confirmEmail) => api.deleteAccount(confirmEmail), [])
+
   const value = useMemo(() => ({
     user,
     isLoading,
     login,
     register,
     googleLogin,
-    logout
-  }), [user, isLoading, login, register, googleLogin, logout])
+    logout,
+    setTrainingConsent,
+    deleteAccount,
+  }), [user, isLoading, login, register, googleLogin, logout, setTrainingConsent, deleteAccount])
 
   return (
     <AuthContext.Provider value={value}>

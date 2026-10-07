@@ -46,6 +46,18 @@ async function request(path, options = {}) {
 
 // ── Normalizers ────────────────────────────────────────────────────────────
 
+function normalizeMe(data) {
+  return {
+    id: data.id,
+    email: data.email,
+    fullName: data.full_name,
+    picture: data.picture,
+    googleId: data.google_id,
+    trainingConsentAt: data.training_consent_at ?? null,
+    trainingConsentVersion: data.training_consent_version ?? null,
+  }
+}
+
 function normalizeReview(r) {
   return {
     id: r.id,
@@ -126,14 +138,17 @@ export const api = {
   },
 
   async getMe() {
-    const data = await request('/auth/me')
-    return {
-      id: data.id,
-      email: data.email,
-      fullName: data.full_name,
-      picture: data.picture,
-      googleId: data.google_id
-    }
+    return normalizeMe(await request('/auth/me'))
+  },
+
+  // Opt in to (or withdraw from) letting this account's reviews and corrections train the model
+  async setTrainingConsent(consent) {
+    return normalizeMe(await request('/auth/me/training-consent', { method: 'PUT', body: JSON.stringify({ consent }) }))
+  },
+
+  // Permanently deletes the account, its properties and their reviews; the email must match the account's
+  async deleteAccount(confirmEmail) {
+    return request('/auth/me', { method: 'DELETE', body: JSON.stringify({ confirm_email: confirmEmail }) })
   },
 
   // Properties

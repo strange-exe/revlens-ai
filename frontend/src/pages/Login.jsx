@@ -231,7 +231,10 @@ function LoginForm({ signup }) {
           </p>
 
           <p className="mt-8 text-center text-xs text-(--color-muted) dark:text-(--color-muted-dark) leading-relaxed">
-            By continuing, you agree to RevLens AI's Terms of Service and Privacy Policy.
+            By continuing, you agree to RevLens&rsquo;s{" "}
+            <Link to="/terms" className="underline underline-offset-2 hover:text-(--color-ink) dark:hover:text-white">Terms of Service</Link>{" "}
+            and{" "}
+            <Link to="/privacy" className="underline underline-offset-2 hover:text-(--color-ink) dark:hover:text-white">Privacy Policy</Link>.
           </p>
         </div>
       </div>
