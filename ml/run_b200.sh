@@ -8,6 +8,9 @@
 # Delete that file to redo a stage. All output is logged to runs/logs/<stage>.log.
 set -euo pipefail
 cd "$(dirname "$0")"
+# Ignore the image's own Python stack (e.g. a system PyTorch 2.7 pinned by /etc/pip/constraint.txt)
+source ./python_env.sh
+isolate_python_env
 
 # ── settings (override with environment variables) ───────────────────────
 # Sized to the GPU memory actually visible: a MIG slice (e.g. "B200 MIG 1g.23gb") has a fraction of the card.
@@ -39,6 +42,7 @@ BACKBONES="${BACKBONES:-microsoft/deberta-v3-xsmall microsoft/deberta-v3-small m
 EPOCHS="${EPOCHS:-3}"
 BATCH_SIZE="${BATCH_SIZE:-$D_TRAIN_BS}"
 SEEDS="${SEEDS:-13}"                              # e.g. "13 14 15" to report mean ± std
+RUN_SUFFIX="${RUN_SUFFIX:-}"                      # e.g. -food: names runs/artifacts/zip so a retrain never reuses old names
 STAGES="${STAGES:-setup test data teacher baselines train eval export}"
 TORCH_CUDA="${TORCH_CUDA:-}"                      # e.g. cu128; empty = match the installed NVIDIA driver
 
@@ -83,14 +87,17 @@ setup() {
 
   # Training env: PyTorch built for this driver. Never install vLLM here: it pulls a torch for a newer driver.
   # If the env can't use the GPU (e.g. something replaced torch), rebuild it from scratch.
-  if [[ -d .venv ]] && ! gpu_ok .venv/bin/python 2>/dev/null; then
-    echo ".venv cannot use the GPU (torch replaced?): rebuilding it"; rm -rf .venv
+  # Also rebuild a venv that can see the system packages, or whose torch is the image's own install.
+  if [[ -d .venv ]] && { grep -qiE '^include-system-site-packages *= *true' .venv/pyvenv.cfg \
+       || ! gpu_ok .venv/bin/python 2>/dev/null || ! torch_is_ours .venv >/dev/null 2>&1; }; then
+    echo ".venv is not a clean, GPU-ready env of its own (system torch visible or replaced?): rebuilding it"; rm -rf .venv
   fi
   [[ -d .venv ]] || python3 -m venv .venv
   .venv/bin/pip install --upgrade pip
-  if ! gpu_ok .venv/bin/python 2>/dev/null; then
+  if ! gpu_ok .venv/bin/python 2>/dev/null || ! torch_is_ours .venv >/dev/null 2>&1; then
     .venv/bin/pip install --force-reinstall torch --index-url "https://download.pytorch.org/whl/$tag"
   fi
+  torch_is_ours .venv                           # fail here, loudly, if the system torch still wins
   # Pin the working torch so no requirement can upgrade it (pip errors loudly instead of breaking the GPU)
   .venv/bin/python -c "import torch; print('torch==' + torch.__version__)" > runs/torch-pin.txt
   .venv/bin/pip install -r requirements.txt -c runs/torch-pin.txt
@@ -109,7 +116,8 @@ setup() {
     if [[ $tag == cu128 ]]; then spec=("vllm==0.11.0" "transformers>=4.56,<5"); fi
     if [[ -n ${VLLM_SPEC:-} ]]; then read -ra spec <<< "$VLLM_SPEC"; fi
     if .venv-teacher/bin/uv pip install --python .venv-teacher/bin/python "${spec[@]}" --torch-backend="$tag" \
-       && gpu_ok .venv-teacher/bin/python && .venv-teacher/bin/python -c "import vllm; print('vLLM', vllm.__version__)"; then
+       && gpu_ok .venv-teacher/bin/python && torch_is_ours .venv-teacher \
+       && .venv-teacher/bin/python -c "import vllm; print('vLLM', vllm.__version__)"; then
       touch runs/vllm_ok
     else
       echo "vLLM is not usable with this driver: the teacher stage will use the hf (transformers) backend."
@@ -176,7 +184,7 @@ baselines() {
 train() {
   for backbone in $BACKBONES; do
     for seed in $SEEDS; do
-      local out="runs/${backbone##*/}-s$seed"
+      local out="runs/${backbone##*/}-s$seed$RUN_SUFFIX"
       if [[ -f "$out/history.json" ]]; then echo "skip $out (trained)"; continue; fi
       python -m revlens_ml.train --backbone "$backbone" --data "$DATA" --seed "$seed" \
         --teacher "$DATA/teacher/train.$TEACHER_NAME.jsonl" --val-teacher "$DATA/teacher/val.$TEACHER_NAME.jsonl" \
@@ -245,7 +253,9 @@ log "finished. Results:"
 cat runs/eval-sample/report.md 2>/dev/null | head -12 || true
 echo
 # Results only exist on this machine until they're copied off it: back them up straight away.
-if [[ -n "${HF_TOKEN:-}" && -f artifacts/${WINNER:-deberta-v3-xsmall-s13}.zip ]]; then
+if [[ -n "${SKIP_PUBLISH:-}" ]]; then
+  echo "SKIP_PUBLISH is set: the caller backs up the results itself."
+elif [[ -n "${HF_TOKEN:-}" && -f artifacts/${WINNER:-deberta-v3-xsmall-s13}.zip ]]; then
   log "backing up model + results to your private Hugging Face repo"
   bash publish_model.sh || echo "Backup FAILED: run 'bash publish_model.sh' again before touching this folder."
 else

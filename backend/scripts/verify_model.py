@@ -7,6 +7,7 @@
 
 Steps (any failure stops with a clear message, nothing is deployed or changed):
   1. download the results bundle next to the model (RESULTS_URL, default: same repo) into ml/runs/b200/
+     (ml/runs/b200-food/ for revlens-results-food.tgz, so retrains never overwrite earlier reports)
   2. download + unpack the model with scripts.fetch_model, the code Render runs at build time
   3. start the backend on a throwaway SQLite DB (migrations applied), with Gemini switched off
   4. check /api/ai/status reports the model, and that new reviews get label_source "model"
@@ -27,7 +28,7 @@ from pathlib import Path
 import requests
 
 BACKEND = Path(__file__).resolve().parents[1]
-ML_RUNS = BACKEND.parent / "ml" / "runs" / "b200"   # gitignored (ml/.gitignore: runs/)
+ML_RUNS_ROOT = BACKEND.parent / "ml" / "runs"        # gitignored (ml/.gitignore: runs/)
 RENDER_LIMIT_MB = 512
 REVIEWS = [  # (text, rating, sentiment a working model must give)
     ("Spotless rooms, a warm and helpful host, and a beautiful view. We would happily stay again.", 5, "positive"),
@@ -105,6 +106,10 @@ def main() -> None:
 
     results_url = os.getenv("RESULTS_URL") or url.rsplit("/", 1)[0] + "/revlens-results.tgz"
     if results_url.lower() != "skip":
+        # revlens-results.tgz -> runs/b200; a tagged retrain (revlens-results-food.tgz) -> runs/b200-food,
+        # so a new bundle never overwrites an earlier run's reports
+        tag = results_url.rsplit("/", 1)[-1].removesuffix(".tgz").removeprefix("revlens-results")
+        ML_RUNS = ML_RUNS_ROOT / f"b200{tag}"
         step(f"1/5 results bundle -> {ML_RUNS}")
         archive = work / "results.tgz"
         download(results_url, token, archive)

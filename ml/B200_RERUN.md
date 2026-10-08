@@ -1,5 +1,9 @@
 # B200: repair and run
 
+> **Fresh machine or a retrain?** Use `retrain.sh` instead: extract the zip into an empty folder and run
+> `bash ml/retrain.sh`. It installs what's missing, ignores the image's own PyTorch, runs in the background
+> (no tmux needed) and never touches an earlier run. The notes below describe the first run's repair.
+
 ## What went wrong
 - vLLM was installed into the training env `.venv`. It brought a CUDA 13 build of torch,
   and your driver only supports up to 12.8 ("NVIDIA driver on your system is too old").
