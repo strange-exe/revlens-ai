@@ -49,6 +49,16 @@ def test_llm_result_is_tagged_and_keeps_only_mentioned_aspects(gemini):
     assert result.aspects == {"cleanliness": "positive", "wifi": "negative"}
 
 
+def test_food_is_its_own_aspect_with_a_definition_the_llm_sees(gemini):
+    assert "food" in ai.ASPECT_GUIDE
+    assert "  - food:" in ai.build_classification_prompt("Breakfast was cold.")
+    assert "breakfast" not in ai.ASPECT_GUIDE["amenities"].lower()  # meals moved out of amenities
+    gemini.reply = llm_reply("negative", food="negative", value="negative")
+    result = ai.analyze_review_sentiment_and_spam("Not worth the price. Breakfast options were very limited.", "Karan")
+    assert result.source == "llm"
+    assert result.aspects == {"value": "negative", "food": "negative"}
+
+
 @pytest.mark.parametrize("bad_aspects", [
     None,                                   # missing
     {"cleanliness": "positive"},            # incomplete

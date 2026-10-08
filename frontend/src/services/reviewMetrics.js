@@ -18,6 +18,7 @@ export const ASPECT_LABELS = {
   host: "Host Hospitality",
   value: "Value for Money",
   amenities: "Rooms & Amenities",
+  food: "Food & Breakfast",
 }
 
 /** "YYYY-MM-DD" -> ms at UTC midnight, or null if unparseable. */

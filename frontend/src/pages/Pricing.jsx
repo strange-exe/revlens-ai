@@ -7,7 +7,7 @@ import SectionHead from "../components/SectionHead"
 const FREE_FEATURES = [
   "Unlimited properties and reviews",
   "Sentiment and spam labels, with the source of every label",
-  "Six aspects per review, from cleanliness to WiFi",
+  "Seven aspects per review, from cleanliness to food",
   "Reply drafts you edit before sending",
   "Ask questions about your reviews, with cited answers",
   "Analytics across properties and time periods",

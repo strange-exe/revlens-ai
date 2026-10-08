@@ -14,6 +14,7 @@ import {
   User, 
   DollarSign, 
   BedDouble,
+  Utensils,
   ShieldCheck, 
   MessageSquare,
   ArrowUpRight,
@@ -76,6 +77,7 @@ export default function Analytics() {
       { key: "host", name: "Host Hospitality", icon: User, colorClass: "text-violet-500 bg-violet-500/10" },
       { key: "value", name: "Value for Money", icon: DollarSign, colorClass: "text-amber-500 bg-amber-500/10" },
       { key: "amenities", name: "Rooms & Amenities", icon: BedDouble, colorClass: "text-teal-500 bg-teal-500/10" },
+      { key: "food", name: "Food & Breakfast", icon: Utensils, colorClass: "text-orange-500 bg-orange-500/10" },
     ]
     return baseThemes.map((t) => {
       const labels = analysedReviews.map((r) => r.aspects[t.key]).filter(Boolean)
@@ -127,6 +129,16 @@ export default function Analytics() {
         type: "actionable",
         impact: "Medium",
         theme: "Value for Money"
+      })
+    }
+
+    if (byKey.food.negative > 0) {
+      recs.push({
+        title: "Review the Food & Breakfast Offer",
+        desc: "Guests criticised the food or breakfast. Check variety, temperature and serving times, and say clearly in your listing what is included.",
+        type: "actionable",
+        impact: "Medium",
+        theme: "Food & Breakfast"
       })
     }
 
@@ -383,7 +395,7 @@ export default function Analytics() {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {themes.map((t) => {
             const IconComponent = t.icon
             return (

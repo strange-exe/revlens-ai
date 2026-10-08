@@ -43,7 +43,7 @@ describe("summaries and deltas", () => {
 describe("insights", () => {
   it("counts only AI-analysed, non-spam reviews", () => {
     const reviews = [
-      review("2026-10-01", { aspects: { wifi: "negative", cleanliness: "positive" } }),
+      review("2026-10-01", { aspects: { wifi: "negative", cleanliness: "positive", food: "negative" } }),
       review("2026-10-01", { aspects: { wifi: "negative" } }),
       review("2026-10-01", { aspects: null }),
       review("2026-10-01", { isSpam: true, aspects: { wifi: "positive" } }),

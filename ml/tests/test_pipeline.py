@@ -83,12 +83,13 @@ def test_metrics_and_worst_errors():
 # ── regressions from code review ─────────────────────────────────────────
 
 def test_teacher_resume_survives_a_torn_last_line(tmp_path):
+    from revlens_ml.labels import ASPECTS
     from revlens_ml.teacher import read_labels, run
 
     class Echo:
         def label(self, text):
             return {"sentiment": "positive", "is_spam": False,
-                    "aspects": {a: "not_mentioned" for a in ["cleanliness", "location", "wifi", "host", "value", "amenities"]}}
+                    "aspects": {a: "not_mentioned" for a in ASPECTS}}
 
     out = tmp_path / "labels.jsonl"
     out.write_text('{"review_id": "a", "sentiment": "positive", "is_spam": false, "aspects": {}}\n{"review_id": "b", "sent',
@@ -97,6 +98,17 @@ def test_teacher_resume_survives_a_torn_last_line(tmp_path):
     ok, failed = run(Echo(), rows, out, workers=1, pace=0)
     assert (ok, failed) == (2, 0)  # "a" kept, torn "b" redone, "c" new
     assert set(read_labels(out)) == {"a", "b", "c"}
+
+
+def test_labels_written_before_food_existed_say_nothing_about_food():
+    from revlens_ml.labels import aspect_label
+    legacy = {"review_id": "a", "aspects": {"value": "negative"}}  # mentioned-only, no "judged" list
+    assert aspect_label(legacy, "value") == "negative"
+    assert aspect_label(legacy, "wifi") == "not_mentioned"  # judged, just not mentioned
+    assert aspect_label(legacy, "food") is None             # never judged: must not be trained as "not mentioned"
+    current = {"review_id": "b", "aspects": {}, "judged": ["cleanliness", "food"]}
+    assert aspect_label(current, "food") == "not_mentioned"
+    assert aspect_label(current, "wifi") is None
 
 
 def test_spam_threshold_ties_pick_the_middle_not_the_top():

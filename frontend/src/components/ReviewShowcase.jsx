@@ -14,7 +14,7 @@ const samples = [
     aspects: {} },
 ]
 
-const ASPECT_NAMES = { cleanliness: "Cleanliness", location: "Location", wifi: "WiFi", host: "Host", value: "Value", amenities: "Amenities" }
+const ASPECT_NAMES = { cleanliness: "Cleanliness", location: "Location", wifi: "WiFi", host: "Host", value: "Value", amenities: "Amenities", food: "Food" }
 const SENTIMENT_TEXT = {
   positive: "text-emerald-700 dark:text-emerald-400",
   neutral: "text-amber-700 dark:text-amber-400",

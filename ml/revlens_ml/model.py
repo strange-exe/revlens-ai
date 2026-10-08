@@ -43,7 +43,7 @@ class MultiTaskModel(nn.Module):
     def load(cls, run_dir: Path, device: str = "cpu"):
         config = json.loads((run_dir / "config.json").read_text())
         encoder = AutoModel.from_pretrained(run_dir / "encoder", dtype=torch.float32)
-        model = cls(encoder)
+        model = cls(encoder, n_aspects=len(config.get("aspects", ASPECTS)))  # older runs have fewer aspect heads
         missing, unexpected = model.load_state_dict(torch.load(run_dir / "heads.pt", map_location=device), strict=False)
         # The encoder weights come from encoder/; every head weight must be present in heads.pt
         if unexpected or any(not k.startswith("encoder.") for k in missing):

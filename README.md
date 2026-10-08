@@ -33,7 +33,7 @@
 
 - **Guest Review Sentiment Analysis**: Classifies incoming reviews as `positive`, `neutral` or `negative`, using a fine-tuned model when one is deployed, otherwise Google Gemini, otherwise a keyword fallback.
 - **Label Provenance**: Every label records who produced it (`model`, `llm`, `heuristic` or `human`) and the UI shows it, so a keyword guess is never presented as AI output.
-- **Aspect Themes**: Per-review sentiment for cleanliness, location, WiFi, host, value and amenities, aggregated in Analytics (only reviews the AI actually analysed are counted).
+- **Aspect Themes**: Per-review sentiment for cleanliness, location, WiFi, host, value, amenities and food (meals and breakfast), aggregated in Analytics (only reviews the AI actually analysed are counted). Food is judged by Gemini; a fine-tuned model deployed before Food was added has no Food head and leaves it unlabelled until it is retrained (see `ml/`).
 - **Spam & Abuse Detection**: Audits review text for promotional links, repetitive spam patterns, or malicious content.
 - **AI-Powered Response Assistant**: Generates warm, professional, on-brand host replies in seconds with customizable tone rules.
 - **Property & Review Management (Full CRUD)**: Register homestay properties, add guest reviews, edit existing records, and flag/delete reviews.
@@ -62,7 +62,7 @@
 - **AI Model Integration**: Fine-tuned DeBERTa-v3 classifier served with ONNX Runtime (optional, see [`ml/`](ml/README.md)); Google Gemini API (`gemini-3.5-flash-lite`, configurable via `GEMINI_MODEL`) for reply drafts and classification fallback; keyword heuristics as the last resort
 
 ### Hosting & Deployment
-- **Frontend Hosting**: Vercel
+- **Frontend Hosting**: Cloudflare Pages
 - **Backend Hosting**: Render (Web Service)
 - **CI/CD**: GitHub Actions
 

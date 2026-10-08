@@ -26,7 +26,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix, f1_score, precision_recall_fscore_support
 
-from .labels import ASPECTS, BACKEND_DIR, RATED_ASPECTS, SENTIMENTS
+from .labels import ASPECTS, BACKEND_DIR, RATED_ASPECTS, SENTIMENTS, aspect_label
 
 LATENCY_SAMPLE = 200
 
@@ -40,7 +40,7 @@ def _jsonl_predictions(path: str, df: pd.DataFrame) -> pd.DataFrame:
     for review_id in df["review_id"]:
         r = rows.get(review_id)
         out.append({"sentiment": r["sentiment"] if r else None, "spam": r["is_spam"] if r else None,
-                    **{f"aspect_{a}": (r["aspects"].get(a, "not_mentioned") if r else None) for a in ASPECTS}})
+                    **{f"aspect_{a}": (aspect_label(r, a) if r else None) for a in ASPECTS}})
     return pd.DataFrame(out)
 
 
@@ -75,7 +75,9 @@ def load_predictor(kind: str, path: str | None):
                 "sentiment": [SENTIMENTS[i] for i in probs.argmax(-1)],
                 "sentiment_confidence": probs.max(-1),
                 "spam": (p.sigmoid().numpy() >= config["spam_threshold"]),
-                **{f"aspect_{name}": [config["aspect_values"][k] for k in idx[:, j]] for j, name in enumerate(ASPECTS)},
+                # A run trained before an aspect existed has no head for it: None = not supported
+                **{f"aspect_{a}": ([config["aspect_values"][k] for k in idx[:, config["aspects"].index(a)]]
+                                   if a in config["aspects"] else [None] * len(idx)) for a in ASPECTS},
             })
         return predict, True
     if kind == "onnx":
@@ -88,7 +90,7 @@ def load_predictor(kind: str, path: str | None):
             results = model.predict(list(texts))
             return pd.DataFrame([{
                 "sentiment": r["sentiment"], "sentiment_confidence": max(r["sentiment_probs"]), "spam": r["is_spam"],
-                **{f"aspect_{a}": r["aspects_all"][a] for a in ASPECTS},
+                **{f"aspect_{a}": r["aspects_all"].get(a) for a in ASPECTS},
             } for r in results])
         return predict, True
     raise ValueError(f"unknown model kind: {kind}")

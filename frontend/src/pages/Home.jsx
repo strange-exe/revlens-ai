@@ -6,7 +6,7 @@ import SectionHead from "../components/SectionHead"
 
 const steps = [
   { title: "Add your reviews", desc: "Paste in reviews from Airbnb, Booking.com, Google, TripAdvisor, MakeMyTrip, Agoda or anywhere else, per property." },
-  { title: "RevLens reads them", desc: "Each review gets a sentiment, a spam check and a verdict on six aspects. Every label says which engine produced it." },
+  { title: "RevLens reads them", desc: "Each review gets a sentiment, a spam check and a verdict on seven aspects. Every label says which engine produced it." },
   { title: "You act on what matters", desc: "See which problems keep coming up, ask questions in plain language, and send replies you have edited." },
 ]
 
@@ -29,9 +29,9 @@ const features = [
     visual: <div className="space-y-2.5">{bar("Positive", 72, "bg-emerald-500")}{bar("Neutral", 18, "bg-amber-400")}{bar("Negative", 10, "bg-rose-500")}</div>,
   },
   {
-    title: "Six aspects, not one score",
-    desc: "Cleanliness, location, WiFi, hosting, value and amenities, judged review by review.",
-    visual: <div className="flex flex-wrap gap-x-5 gap-y-2">{aspect("Cleanliness", true)}{aspect("WiFi", false)}{aspect("Location", true)}{aspect("Value", false)}{aspect("Host", true)}</div>,
+    title: "Seven aspects, not one score",
+    desc: "Cleanliness, location, WiFi, hosting, value, amenities and food, judged review by review.",
+    visual: <div className="flex flex-wrap gap-x-5 gap-y-2">{aspect("Cleanliness", true)}{aspect("WiFi", false)}{aspect("Location", true)}{aspect("Value", false)}{aspect("Host", true)}{aspect("Food", false)}</div>,
   },
   {
     title: "Reply drafts you control",
@@ -52,7 +52,7 @@ const features = [
 
 // Verifiable facts about how RevLens is built and evaluated (see ml/DATASETS.md)
 const facts = [
-  { value: "6", label: "guest-experience aspects tracked in every review" },
+  { value: "7", label: "guest-experience aspects tracked in every review" },
   { value: "40k", label: "hotel reviews in the frozen test set we evaluate on" },
   { value: "4", label: "label sources, always shown: AI model, LLM, keyword rule, or you" },
 ]

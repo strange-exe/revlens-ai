@@ -33,7 +33,12 @@ ASPECT_GUIDE = {
     "value": "Price relative to what the guest got, only when the guest links the two ('worth it', 'overpriced'). "
              "'Expensive but worth it' is positive; a bare mention of the price is not_mentioned.",
     "amenities": "The room and facilities themselves: size, comfort, beds, furniture, heating/cooling, hot water, "
-                 "appliances, pool, kitchen, food and breakfast. Whether they work, and whether they match the listing.",
+                 "appliances, pool, guest kitchen equipment. Whether they work, and whether they match the listing. "
+                 "Meals are food, not amenities.",
+    # Added last so the aspect order of already-trained models is unchanged
+    "food": "Meals and drinks: breakfast, dinner, tea and snacks, whether cooked by the host or served on site. "
+            "Taste, variety, freshness, portions, temperature, and whether the meals promised were served. "
+            "Kitchen equipment the guest cooks with is NOT food (it is amenities).",
 }
 
 # Overall-sentiment rule, shared by the LLM prompt and human labellers

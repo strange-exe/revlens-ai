@@ -12,7 +12,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 
-from .labels import ASPECTS, classify_sentiment_locally, detect_spam_locally
+from .labels import ASPECTS, aspect_label, classify_sentiment_locally, detect_spam_locally
 from .train import load_teacher
 
 
@@ -40,9 +40,11 @@ class TfidfBaseline:
         labelled = df["review_id"].isin(teacher).to_numpy()
         if labelled.any():
             for a in ASPECTS:
-                y = [teacher[r]["aspects"].get(a, "not_mentioned") for r in df.loc[labelled, "review_id"]]
+                verdicts = [aspect_label(teacher[r], a) for r in df.loc[labelled, "review_id"]]
+                judged = np.array([v is not None for v in verdicts])
+                y = [v for v in verdicts if v is not None]
                 if len(set(y)) > 1:
-                    self.aspects[a] = LogisticRegression(max_iter=2000, class_weight="balanced").fit(X[labelled], y)
+                    self.aspects[a] = LogisticRegression(max_iter=2000, class_weight="balanced").fit(X[labelled][judged], y)
         return self
 
     def predict(self, texts: list[str]) -> pd.DataFrame:

@@ -21,10 +21,23 @@ from app.ai import (  # noqa: E402
     parse_classification,
 )
 
-ASPECTS = tuple(ASPECT_GUIDE)  # cleanliness, location, wifi, host, value, amenities
+ASPECTS = tuple(ASPECT_GUIDE)  # cleanliness, location, wifi, host, value, amenities, food
+
+# Aspects that every teacher label written before "food" existed had been judged on.
+LEGACY_ASPECTS = ("cleanliness", "location", "wifi", "host", "value", "amenities")
 
 # Dataset sub-rating -> our aspect. wifi and host have no rating in the dataset: teacher-only.
 RATED_ASPECTS = {"cleanliness": "cleanliness", "location": "location", "value": "value", "amenities": "rooms"}
+
+
+def aspect_label(label: dict, aspect: str) -> str | None:
+    """A teacher label's verdict on one aspect: 'positive', 'negative' or 'not_mentioned', or None when the
+    label never judged it. Labels store mentioned aspects only, so a missing key means 'not mentioned' only
+    if the aspect was judged: new labels list those in "judged", older ones judged LEGACY_ASPECTS. Reading a
+    missing key as 'not_mentioned' would teach a new aspect that nobody ever talks about it."""
+    if aspect not in label.get("judged", LEGACY_ASPECTS):
+        return None
+    return label["aspects"].get(aspect, "not_mentioned")
 
 
 def rating_to_sentiment(stars: float) -> str:
@@ -40,7 +53,7 @@ def rating_to_polarity(stars: float) -> str | None:
 
 
 __all__ = [
-    "ASPECTS", "ASPECT_GUIDE", "ASPECT_VALUES", "CLASSIFICATION_SCHEMA", "RATED_ASPECTS", "SENTIMENTS",
-    "build_classification_prompt", "classify_sentiment_locally", "detect_spam_locally", "parse_classification",
+    "ASPECTS", "ASPECT_GUIDE", "ASPECT_VALUES", "CLASSIFICATION_SCHEMA", "LEGACY_ASPECTS", "RATED_ASPECTS",
+    "SENTIMENTS", "aspect_label", "build_classification_prompt", "classify_sentiment_locally", "detect_spam_locally", "parse_classification",
     "rating_to_polarity", "rating_to_sentiment",
 ]

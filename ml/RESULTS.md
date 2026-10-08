@@ -10,7 +10,7 @@ Read [DATASETS.md](DATASETS.md) first: every number below inherits its label lim
 - **Split:** 60/20/20, grouped by author so no reviewer appears in two splits, stratified by sentiment.
   Test = 40,529 reviews, frozen before any model was trained. A 2,100-review stratified sample of test is used
   for slower comparisons (teacher LLM, error files).
-- **Models:** DeBERTa-v3 xsmall / small / base with sentiment, spam and six aspect heads, one seed (13).
+- **Models:** DeBERTa-v3 xsmall / small / base with sentiment, spam and six aspect heads (the aspect list has since grown to seven with `food`; these runs predate it), one seed (13).
   Baselines: keyword heuristic (the old production fallback) and TF-IDF + logistic regression.
 - **Deployed:** `deberta-v3-xsmall-s13`, int8 ONNX, 87 MB, ~427 MB peak RAM. The only size that fits Render's
   free 512 MB instance.

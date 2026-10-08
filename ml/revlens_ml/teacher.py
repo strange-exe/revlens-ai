@@ -22,7 +22,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from .labels import BACKEND_DIR, CLASSIFICATION_SCHEMA, build_classification_prompt, parse_classification
+from .labels import ASPECTS, BACKEND_DIR, CLASSIFICATION_SCHEMA, build_classification_prompt, parse_classification
 
 
 def to_json_schema(node: dict) -> dict:
@@ -172,8 +172,9 @@ def run(teacher, rows: pd.DataFrame, out_path: Path, workers: int, pace: float) 
             with lock:
                 if parsed:
                     sentiment, is_spam, aspects = parsed
+                    # "judged": aspects is mentioned-only, so say which aspects this label actually ruled on
                     f.write(json.dumps({"review_id": review_id, "sentiment": sentiment, "is_spam": is_spam,
-                                        "aspects": aspects}) + "\n")
+                                        "aspects": aspects, "judged": list(ASPECTS)}) + "\n")
                     f.flush()
                     ok += 1
                 else:

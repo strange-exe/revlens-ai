@@ -27,7 +27,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from transformers import AutoModel, AutoTokenizer, get_linear_schedule_with_warmup
 
-from .labels import ASPECT_VALUES, ASPECTS, SENTIMENTS
+from .labels import ASPECT_VALUES, ASPECTS, SENTIMENTS, aspect_label
 from .model import MultiTaskModel
 
 IGNORE = -100
@@ -56,7 +56,9 @@ def targets(df: pd.DataFrame, teacher: dict[str, dict]) -> dict[str, np.ndarray]
         label = teacher.get(review_id)
         if label:
             for j, a in enumerate(ASPECTS):
-                aspects[i, j] = ASPECT_VALUES.index(label["aspects"].get(a, "not_mentioned"))
+                verdict = aspect_label(label, a)
+                if verdict is not None:  # an aspect the label never judged stays IGNORE
+                    aspects[i, j] = ASPECT_VALUES.index(verdict)
         elif origin == "synthetic_spam":
             aspects[i] = not_mentioned  # spam says nothing about the stay
     return {"sentiment": sentiment.to_numpy(np.int64), "spam": spam.to_numpy(np.float32), "aspects": aspects,

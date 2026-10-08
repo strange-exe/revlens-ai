@@ -56,9 +56,11 @@ def test_bad_model_dir_logs_error_and_keeps_serving(monkeypatch, tmp_path, caplo
 @pytest.mark.skipif(not os.getenv("TEST_MODEL_DIR"), reason="set TEST_MODEL_DIR to an exported model to run")
 def test_real_exported_model_loads_and_predicts():
     from app.classifier import OnnxClassifier
-    result = OnnxClassifier(os.environ["TEST_MODEL_DIR"]).predict(["Spotless room but the wifi kept dropping."])[0]
+    model = OnnxClassifier(os.environ["TEST_MODEL_DIR"])
+    result = model.predict(["Spotless room but the wifi kept dropping."])[0]
     assert result["sentiment"] in ai.SENTIMENTS and isinstance(result["is_spam"], bool)
-    assert set(result["aspects_all"]) == set(ai.ASPECT_GUIDE)
+    # A model reports the aspects it was trained on; one exported before an aspect was added (e.g. food) has fewer
+    assert set(result["aspects_all"]) == set(model.config["aspects"]) <= set(ai.ASPECT_GUIDE)
 
 
 def test_fit_ids_keeps_short_reviews_whole_and_long_ones_head_and_tail():
