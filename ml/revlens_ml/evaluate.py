@@ -56,7 +56,9 @@ def load_predictor(kind: str, path: str | None):
     if kind == "torch":
         import torch
         from .model import MultiTaskModel
-        model, tokenizer, config = MultiTaskModel.load(Path(path))
+        # GPU when there is one (40k test reviews), full fp32 so scores don't depend on the device
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model, tokenizer, config = MultiTaskModel.load(Path(path), device=device)
 
         import sys
         sys.path.insert(0, str(BACKEND_DIR))
@@ -65,10 +67,10 @@ def load_predictor(kind: str, path: str | None):
         def predict(texts):
             ids = [fit_ids(x, config["max_len"]) for x in tokenizer(list(texts), truncation=False, verbose=False)["input_ids"]]
             width, pad = max(map(len, ids)), tokenizer.pad_token_id
-            input_ids = torch.tensor([x + [pad] * (width - len(x)) for x in ids])
-            attention_mask = torch.tensor([[1] * len(x) + [0] * (width - len(x)) for x in ids])
+            input_ids = torch.tensor([x + [pad] * (width - len(x)) for x in ids], device=device)
+            attention_mask = torch.tensor([[1] * len(x) + [0] * (width - len(x)) for x in ids], device=device)
             with torch.no_grad():
-                s, p, a = model(input_ids, attention_mask)
+                s, p, a = (t.float().cpu() for t in model(input_ids, attention_mask))
             probs = s.softmax(-1).numpy()
             idx = a.argmax(-1).numpy()
             return pd.DataFrame({
