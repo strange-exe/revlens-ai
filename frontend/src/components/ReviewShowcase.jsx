@@ -1,4 +1,5 @@
 import { Star, ShieldAlert } from "lucide-react"
+import { ASPECT_SHORT } from "../services/reviewMetrics"
 
 // RevLens demo reviews with the labels Gemini actually produced for them (aspect backfill, 2026-10-04).
 // Shown as a product demo, never as customer testimonials.
@@ -14,7 +15,6 @@ const samples = [
     aspects: {} },
 ]
 
-const ASPECT_NAMES = { cleanliness: "Cleanliness", location: "Location", wifi: "WiFi", host: "Host", value: "Value", amenities: "Amenities", food: "Food" }
 const SENTIMENT_TEXT = {
   positive: "text-emerald-700 dark:text-emerald-400",
   neutral: "text-amber-700 dark:text-amber-400",
@@ -43,7 +43,7 @@ function Sample({ review }) {
           <>
             <span className={`capitalize ${SENTIMENT_TEXT[review.sentiment]}`}>{review.sentiment}</span>
             {Object.entries(review.aspects).map(([name, polarity]) => (
-              <span key={name} className={SENTIMENT_TEXT[polarity]}>{ASPECT_NAMES[name]} {polarity === "positive" ? "+" : "−"}</span>
+              <span key={name} className={SENTIMENT_TEXT[polarity]}>{ASPECT_SHORT[name]} {polarity === "positive" ? "+" : "−"}</span>
             ))}
           </>
         )}

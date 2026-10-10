@@ -11,6 +11,11 @@ export const PERIODS = [
   { key: "all", label: "All time", days: null },
 ]
 
+// Short names for per-review labels (cards, examples), in the same order as ASPECT_LABELS
+export const ASPECT_SHORT = {
+  cleanliness: "Cleanliness", location: "Location", wifi: "WiFi", host: "Host", value: "Value", amenities: "Amenities", food: "Food",
+}
+
 export const ASPECT_LABELS = {
   cleanliness: "Cleanliness",
   location: "Location & Views",

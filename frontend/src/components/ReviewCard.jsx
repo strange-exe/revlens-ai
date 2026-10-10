@@ -1,5 +1,11 @@
 import { Star, Sparkles, ShieldAlert, Check, Trash2 } from "lucide-react"
 import Button from "./ui/Button"
+import { ASPECT_SHORT } from "../services/reviewMetrics"
+
+const aspectText = {
+  positive: "text-emerald-700 dark:text-emerald-400",
+  negative: "text-rose-700 dark:text-rose-400",
+}
 
 const sentimentStyles = {
   positive: "bg-(--color-brand-100) text-(--color-brand-700) dark:bg-(--color-brand-800) dark:text-(--color-brand-300) ring-1 ring-(--color-brand-300)/20 dark:ring-(--color-brand-700)/50",
@@ -21,6 +27,8 @@ export default function ReviewCard({ review, onReply, onDelete, onUnflag }) {
   // Spam is decided by the backend; unflagging is the owner's override
   const isSpam = review.isSpam && !review.isUnflagged
   const badge = labelSourceBadges[review.labelSource]
+  // What the review says about each aspect it mentions, in a fixed order (null = not analysed yet)
+  const aspects = Object.keys(ASPECT_SHORT).filter((k) => ["positive", "negative"].includes(review.aspects?.[k]))
 
   return (
     <div className={`lift group relative rounded-2xl widget-card p-5 ${isSpam ? "border-red-500/30 bg-red-500/5 dark:bg-red-950/5 ring-1 ring-red-500/10" : ""}`}>
@@ -57,6 +65,17 @@ export default function ReviewCard({ review, onReply, onDelete, onUnflag }) {
       <p className="mt-2.5 text-sm text-(--color-ink) dark:text-white/85 leading-relaxed line-clamp-3 pl-2">
         {text}
       </p>
+
+      {!isSpam && aspects.length > 0 && (
+        <p className="mt-2.5 pl-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold" aria-label="Aspects mentioned">
+          {aspects.map((k) => (
+            <span key={k} className={aspectText[review.aspects[k]]}>
+              {ASPECT_SHORT[k]} {review.aspects[k] === "positive" ? "+" : "−"}
+              <span className="sr-only"> ({review.aspects[k]})</span>
+            </span>
+          ))}
+        </p>
+      )}
 
       {isSpam && (
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[11px] mt-3.5 pl-2 ml-2 select-none w-fit">
