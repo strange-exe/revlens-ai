@@ -94,6 +94,7 @@ class OnnxClassifier:
             results.append({
                 "sentiment": self.config["sentiments"][int(sentiment_probs[i].argmax())],
                 "sentiment_probs": sentiment_probs[i].tolist(),
+                "confidence": float(sentiment_probs[i].max()),
                 "is_spam": bool(spam_probs[i] >= self.config["spam_threshold"]),
                 "spam_prob": float(spam_probs[i]),
                 "aspects": {k: v for k, v in aspects.items() if v != "not_mentioned"},

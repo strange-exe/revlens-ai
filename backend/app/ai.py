@@ -72,6 +72,13 @@ class Classification:
     is_spam: bool
     source: str                 # "model" | "llm" | "heuristic"
     aspects: dict | None = None  # mentioned aspects only; None = not analysed
+    confidence: float | None = None  # model only: probability of its sentiment label
+
+
+# Ask the host to check a model label when its sentiment confidence is below this. Measured on the 2,000 real
+# reviews of the eval sample (deployed -food2 model): 12.4% of reviews fall below 0.8, and 44% of those have the
+# wrong sentiment against 7% of the rest, so checks go where the model is weakest. Keyword guesses are always asked.
+CHECK_BELOW = 0.8
 
 
 @dataclass(frozen=True)
@@ -303,7 +310,7 @@ def classify_reviews(items: list[tuple[str, str]]) -> list[Classification]:
         return []
     if _classifier is not None:
         try:
-            return [Classification(r["sentiment"], r["is_spam"], "model", r["aspects"])
+            return [Classification(r["sentiment"], r["is_spam"], "model", r["aspects"], r.get("confidence"))
                     for r in _classifier.predict([text for text, _ in items])]
         except Exception as e:
             logger.error(f"Fine-tuned classifier failed on a batch: {e}")
@@ -467,7 +474,8 @@ def analyze_review_sentiment_and_spam(text: str, guest_name: str) -> Classificat
     if _classifier is not None:
         try:
             result = _classifier.predict([text])[0]
-            return Classification(result["sentiment"], result["is_spam"], "model", result["aspects"])
+            return Classification(result["sentiment"], result["is_spam"], "model", result["aspects"],
+                                  result.get("confidence"))
         except Exception as e:
             logger.error(f"Fine-tuned classifier failed: {e}")
 

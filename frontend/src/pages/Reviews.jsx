@@ -9,6 +9,7 @@ import AnimatedTabs from "../components/fx/AnimatedTabs"
 import Toast from "../components/ui/Toast"
 import { isSpamReview } from "../services/reviewFilters"
 import { useProperty } from "../context/PropertyContext"
+import { useAuth } from "../context/AuthContext"
 import PageSkeleton from "../components/ui/Skeleton"
 
 // Where the draft came from (backend `source`), so a template is never mistaken for an AI reply
@@ -18,12 +19,21 @@ const DRAFT_LABELS = {
   error: "No draft available: write your reply below",
 }
 
+// "Is this label right?": the host's own, non-spam reviews whose labels the model was unsure about
+function needsHostCheck(review, ownIds) {
+  return review.needsCheck && ownIds.has(review.propertyId) && !isSpamReview(review)
+}
+
 export default function Reviews() {
-  const { reviews, selectedPropertyId, unflagReview, deleteReview, loading, error, updateReviewResponse, generateReply } = useProperty()
+  const { reviews, properties, selectedPropertyId, unflagReview, deleteReview, checkLabels, loading, error, updateReviewResponse, generateReply } = useProperty()
+  const { user } = useAuth()
+  // Only the host's own reviews can be changed; the shared sample reviews are read-only (backend enforces it too)
+  const ownIds = useMemo(() => new Set(properties.filter((p) => p.userId === user?.id).map((p) => p.id)), [properties, user])
+  const isOwn = (r) => ownIds.has(r.propertyId)
 
   const [addOpen, setAddOpen] = useState(false)
   const [viewState, setViewState] = useState({
-    activeTab: "inbox", // "inbox" or "spam"
+    activeTab: "inbox", // "inbox", "check" or "spam"
     search: "",
     activeReviewForReply: null,
     draftReplyText: "",
@@ -53,6 +63,16 @@ export default function Reviews() {
     setViewState(prev => ({ ...prev, toastMessage: "Review marked as valid and moved to Inbox." }))
   }
 
+  const handleCheckLabels = async (id, labels) => {
+    try {
+      await checkLabels(id, labels)
+      setViewState(prev => ({ ...prev, toastMessage: "Labels saved. Thanks for checking." }))
+    } catch (err) {
+      setViewState(prev => ({ ...prev, toastMessage: { text: `Couldn't save the labels: ${err.message || err}`, type: "error" } }))
+      throw err
+    }
+  }
+
   const handleDelete = (id) => {
     deleteReview(id)
     setViewState(prev => ({ ...prev, toastMessage: "Flagged review deleted successfully." }))
@@ -67,12 +87,17 @@ export default function Reviews() {
     return propertyReviews.filter((r) => isSpamReview(r)).length
   }, [propertyReviews])
 
+  // "Is this label right?": the host's own reviews whose labels the model was unsure about
+  const checkCount = useMemo(
+    () => propertyReviews.filter((r) => needsHostCheck(r, ownIds)).length, [propertyReviews, ownIds])
+
   const filtered = useMemo(() => {
     return propertyReviews.filter((r) => {
       // 1. Tab filter
       const isSpam = isSpamReview(r)
       if (activeTab === "inbox" && isSpam) return false
       if (activeTab === "spam" && !isSpam) return false
+      if (activeTab === "check" && !needsHostCheck(r, ownIds)) return false
 
       // 2. Search filter
       const searchLower = search.toLowerCase()
@@ -82,7 +107,7 @@ export default function Reviews() {
         r.text.toLowerCase().includes(searchLower)
       )
     })
-  }, [propertyReviews, activeTab, search])
+  }, [propertyReviews, activeTab, search, ownIds])
 
   // Count sentiments for valid reviews in current filter list
   const positive = useMemo(() => {
@@ -126,6 +151,12 @@ export default function Reviews() {
   }
 
   const handleSendReply = async () => {
+    if (!isOwn(activeReviewForReply)) {
+      // Sample reviews are read-only: copy the reply, don't save it
+      navigator.clipboard.writeText(draftReplyText).catch(() => {})
+      setViewState(prev => ({ ...prev, toastMessage: "Reply copied. Sample reviews can't be saved to.", activeReviewForReply: null }))
+      return
+    }
     try {
       await updateReviewResponse(activeReviewForReply.id, draftReplyText)
       navigator.clipboard.writeText(draftReplyText).catch(() => {})
@@ -168,7 +199,7 @@ export default function Reviews() {
               Cancel
             </Button>
             <Button variant="primary" onClick={handleSendReply} disabled={isGeneratingReply || !draftReplyText.trim()}>
-              {isGeneratingReply ? "Generating..." : "Save & Copy Reply"}
+              {isGeneratingReply ? "Generating..." : activeReviewForReply && !isOwn(activeReviewForReply) ? "Copy Reply" : "Save & Copy Reply"}
             </Button>
           </>
         }
@@ -226,7 +257,7 @@ export default function Reviews() {
             {negative} negative
           </span>
           <span className="font-semibold text-(--color-brand-500) dark:text-(--color-brand-400)">
-            {activeTab === "inbox" ? inboxCount : spamCount} total
+            {{ inbox: inboxCount, check: checkCount, spam: spamCount }[activeTab]} total
           </span>
         </div>
         </div>
@@ -242,6 +273,7 @@ export default function Reviews() {
           onChange={(tab) => setViewState(prev => ({ ...prev, activeTab: tab }))}
           tabs={[
             { value: "inbox", label: `Inbox (${inboxCount})` },
+            { value: "check", label: `To check (${checkCount})` },
             { value: "spam", label: `Flagged Spam (${spamCount})` },
           ]}
         />
@@ -251,7 +283,7 @@ export default function Reviews() {
         <Input
           value={search}
           onChange={(e) => setViewState(prev => ({ ...prev, search: e.target.value }))}
-          placeholder={activeTab === "inbox" ? "Search inbox reviews..." : "Search flagged spam reviews..."}
+          placeholder={activeTab === "spam" ? "Search flagged spam reviews..." : "Search inbox reviews..."}
           icon={<Search size={16} />}
           fullWidth
         />
@@ -261,14 +293,16 @@ export default function Reviews() {
       {filtered.length === 0 ? (
         <div className="text-center py-20">
           <div className="w-12 h-12 rounded-xl bg-(--color-brand-100) dark:bg-(--color-brand-800) flex items-center justify-center mx-auto mb-4">
-            {activeTab === "inbox" ? (
+            {activeTab !== "spam" ? (
               <MessageSquareText size={20} className="text-(--color-brand-400)" />
             ) : (
               <ShieldAlert size={20} className="text-red-400" />
             )}
           </div>
           <p className="text-sm text-(--color-muted) dark:text-(--color-muted-dark)">
-            {activeTab === "inbox" ? "No reviews match your search." : "No flagged spam reviews detected."}
+            {activeTab === "inbox" ? "No reviews match your search."
+              : activeTab === "check" ? "Nothing to check: the AI model was confident about every review here."
+              : "No flagged spam reviews detected."}
           </p>
         </div>
       ) : (
@@ -278,8 +312,9 @@ export default function Reviews() {
               key={r.id}
               review={r}
               onReply={handleOpenReplyModal}
-              onDelete={handleDelete}
-              onUnflag={handleUnflag}
+              onDelete={isOwn(r) ? handleDelete : undefined}
+              onUnflag={isOwn(r) ? handleUnflag : undefined}
+              onCheckLabels={isOwn(r) ? handleCheckLabels : undefined}
             />
           ))}
         </div>

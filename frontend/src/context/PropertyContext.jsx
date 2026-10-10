@@ -167,6 +167,12 @@ export function PropertyProvider({ children }) {
     }
   }, [])
 
+  const checkLabels = useCallback(async (id, labels) => {
+    const updated = await api.checkLabels(id, labels)
+    dispatch({ type: "UPDATE_REVIEW_SUCCESS", payload: { id, data: updated } })
+    return updated
+  }, [])
+
   const deleteReview = useCallback(async (id) => {
     try {
       await api.deleteReview(id)
@@ -207,6 +213,7 @@ export function PropertyProvider({ children }) {
       importReviews,
       reviews,
       unflagReview,
+      checkLabels,
       deleteReview,
       updateReviewResponse,
       generateReply,
@@ -223,6 +230,7 @@ export function PropertyProvider({ children }) {
       importReviews,
       reviews,
       unflagReview,
+      checkLabels,
       deleteReview,
       updateReviewResponse,
       generateReply,

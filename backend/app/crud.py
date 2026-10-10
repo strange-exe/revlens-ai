@@ -40,8 +40,10 @@ def get_review(db: Session, review_id: int):
     return db.query(models.Review).filter(models.Review.id == review_id).first()
 
 
-def create_review(db: Session, review: schemas.ReviewCreate, label_source: str, aspects: dict | None = None):
-    db_review = models.Review(**review.model_dump(), label_source=label_source, aspects=aspects)
+def create_review(db: Session, review: schemas.ReviewCreate, label_source: str, aspects: dict | None = None,
+                  label_confidence: float | None = None):
+    db_review = models.Review(**review.model_dump(), label_source=label_source, aspects=aspects,
+                              label_confidence=label_confidence)
     db.add(db_review)
     db.commit()
     db.refresh(db_review)
@@ -70,6 +72,21 @@ def update_review(db: Session, review_id: int, review: schemas.ReviewUpdate):
     db.commit()
     db.refresh(db_review)
     return db_review
+
+
+def check_labels(db: Session, review_id: int, sentiment: str, aspects: dict):
+    """The host confirmed or corrected the labels. The first time, the machine's labels are kept in
+    machine_label: host corrections are only useful for training and evaluation next to what the model said."""
+    review = get_review(db, review_id)
+    if review.machine_label is None and review.label_source != "human":
+        review.machine_label = {"sentiment": review.sentiment, "is_spam": review.is_spam, "aspects": review.aspects,
+                                "source": review.label_source, "confidence": review.label_confidence}
+    review.sentiment, review.aspects = sentiment, dict(aspects)
+    review.label_source = "human"
+    review.label_checked_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(review)
+    return review
 
 
 def flag_review(db: Session, review_id: int, is_spam=None, is_unflagged=None):

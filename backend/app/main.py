@@ -255,6 +255,18 @@ def owned_property(db: Session, property_id: int, user: models.User) -> models.P
     return prop
 
 
+def owned_review(db: Session, review_id: int, user: models.User) -> models.Review:
+    """Changes go only to reviews on the user's own properties. The shared sample reviews are read-only: every
+    user sees them, so one user's edit, flag or delete would change everyone's sample data."""
+    review = crud.get_review(db, review_id)
+    if not review:
+        raise HTTPException(status_code=404, detail=f"Review {review_id} not found")
+    prop = db.query(models.Property).filter(models.Property.id == review.property_id).first()
+    if prop is None or prop.user_id != user.id:
+        raise HTTPException(status_code=403, detail="You can only change reviews on your own properties")
+    return review
+
+
 def _dedupe_key(text: str) -> str:
     return " ".join(text.lower().split())
 
@@ -280,7 +292,8 @@ def import_reviews(
     labels = ai.classify_reviews([(item.text, item.guest_name) for item in fresh])
     rows = [
         {**item.model_dump(), "property_id": prop.id, "property_name": prop.name, "sentiment": label.sentiment,
-         "is_spam": label.is_spam, "label_source": label.source, "aspects": label.aspects}
+         "is_spam": label.is_spam, "label_source": label.source, "aspects": label.aspects,
+         "label_confidence": label.confidence}
         for item, label in zip(fresh, labels)
     ]
     return {"created": crud.create_reviews(db, rows) if rows else [], "duplicates": duplicates}
@@ -292,15 +305,17 @@ def create_review(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    owned_property(db, review.property_id, current_user)
-    
+    prop = owned_property(db, review.property_id, current_user)
+    review.property_name = prop.name  # from the database, as for imports: never trust the client's copy
+
     # A sentiment sent by the client is a human label; otherwise classify it here
     if review.sentiment is not None:
         return crud.create_review(db, review, label_source="human")
 
     result = ai.analyze_review_sentiment_and_spam(review.text, review.guest_name)
     review.sentiment, review.is_spam = result.sentiment, result.is_spam
-    return crud.create_review(db, review, label_source=result.source, aspects=result.aspects)
+    return crud.create_review(db, review, label_source=result.source, aspects=result.aspects,
+                              label_confidence=result.confidence)
 
 
 @app.post("/api/reviews/{review_id}/generate-reply", status_code=200)
@@ -383,15 +398,23 @@ def update_review(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    db_review = crud.get_review(db, review_id)
-    if not db_review:
-        raise HTTPException(status_code=404, detail=f"Review {review_id} not found")
-    
-    prop = db.query(models.Property).filter(models.Property.id == db_review.property_id).first()
-    if prop and prop.user_id and prop.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to update this review")
-        
+    owned_review(db, review_id, current_user)
     return crud.update_review(db, review_id, review)
+
+
+@app.put("/api/reviews/{review_id}/labels", response_model=schemas.ReviewOut, status_code=200)
+def check_review_labels(
+    review_id: int,
+    labels: schemas.LabelCheck,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """The host confirms or corrects a review's sentiment and aspects ("Is this label right?")."""
+    owned_review(db, review_id, current_user)
+    unknown = set(labels.aspects) - set(ai.ASPECT_GUIDE)
+    if unknown:
+        raise HTTPException(status_code=422, detail=f"Unknown aspects: {', '.join(sorted(unknown))}")
+    return crud.check_labels(db, review_id, labels.sentiment, labels.aspects)
 
 
 @app.patch("/api/reviews/{review_id}/flag", response_model=schemas.ReviewOut, status_code=200)
@@ -402,14 +425,7 @@ def flag_review(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    db_review = crud.get_review(db, review_id)
-    if not db_review:
-        raise HTTPException(status_code=404, detail=f"Review {review_id} not found")
-        
-    prop = db.query(models.Property).filter(models.Property.id == db_review.property_id).first()
-    if prop and prop.user_id and prop.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to flag this review")
-        
+    owned_review(db, review_id, current_user)
     return crud.flag_review(db, review_id, is_spam=is_spam, is_unflagged=is_unflagged)
 
 
@@ -419,12 +435,5 @@ def delete_review(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    db_review = crud.get_review(db, review_id)
-    if not db_review:
-        raise HTTPException(status_code=404, detail=f"Review {review_id} not found")
-        
-    prop = db.query(models.Property).filter(models.Property.id == db_review.property_id).first()
-    if prop and prop.user_id and prop.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to delete this review")
-        
+    owned_review(db, review_id, current_user)
     return crud.delete_review(db, review_id)

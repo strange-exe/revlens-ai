@@ -1,5 +1,7 @@
-import { Star, Sparkles, ShieldAlert, Check, Trash2 } from "lucide-react"
+import { useState } from "react"
+import { Star, Sparkles, ShieldAlert, Check, Trash2, Pencil } from "lucide-react"
 import Button from "./ui/Button"
+import { LabelEditor, LabelQuestion } from "./LabelCheck"
 import { ASPECT_SHORT } from "../services/reviewMetrics"
 
 const aspectText = {
@@ -22,12 +24,33 @@ const labelSourceBadges = {
   human: { text: "Manual", title: "Labelled or corrected by a person" },
 }
 
-export default function ReviewCard({ review, onReply, onDelete, onUnflag }) {
+// onCheckLabels is passed only for the host's own reviews: the shared sample reviews are read-only
+export default function ReviewCard({ review, onReply, onDelete, onUnflag, onCheckLabels }) {
   const { guestName, propertyName, rating, text, date, sentiment, source } = review
+  const [editing, setEditing] = useState(false)
+  const [confirming, setConfirming] = useState(false)
 
   // Spam is decided by the backend; unflagging is the owner's override
   const isSpam = review.isSpam && !review.isUnflagged
-  const badge = labelSourceBadges[review.labelSource]
+  const badge = review.labelSource === "human" && review.labelCheckedAt
+    ? { text: "Checked by you", title: "You confirmed or corrected these labels" }
+    : labelSourceBadges[review.labelSource]
+  const canCheck = Boolean(onCheckLabels) && !isSpam
+
+  const confirm = async () => {
+    setConfirming(true)
+    try {
+      await onCheckLabels(review.id, { sentiment, aspects: review.aspects || {} })
+    } catch {
+      // the page shows the error; the question stays so the host can try again
+    } finally {
+      setConfirming(false)
+    }
+  }
+  const saveCorrection = async (labels) => {
+    await onCheckLabels(review.id, labels)
+    setEditing(false)
+  }
   // What the review says about each aspect it mentions, in a fixed order (null = not analysed yet)
   const aspects = Object.keys(ASPECT_SHORT).filter((k) => ["positive", "negative"].includes(review.aspects?.[k]))
 
@@ -78,6 +101,13 @@ export default function ReviewCard({ review, onReply, onDelete, onUnflag }) {
         </p>
       )}
 
+      {canCheck && editing && (
+        <LabelEditor review={review} onSave={saveCorrection} onCancel={() => setEditing(false)} />
+      )}
+      {canCheck && !editing && review.needsCheck && (
+        <LabelQuestion review={review} onConfirm={confirm} onFix={() => setEditing(true)} busy={confirming} />
+      )}
+
       {isSpam && (
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[11px] mt-3.5 pl-2 ml-2 select-none w-fit">
           <ShieldAlert size={13} className="shrink-0" />
@@ -94,6 +124,12 @@ export default function ReviewCard({ review, onReply, onDelete, onUnflag }) {
             <span title={badge.title} className="text-[10px] font-semibold text-(--color-muted) dark:text-(--color-muted-dark) ring-1 ring-(--color-border) dark:ring-(--color-border-dark) px-2 py-0.5 rounded-md">
               {badge.text}
             </span>
+          )}
+          {canCheck && !editing && !review.needsCheck && (
+            <button type="button" onClick={() => setEditing(true)} aria-label="Edit labels" title="Edit labels"
+              className="inline-flex items-center justify-center w-9 h-9 -my-2 rounded-lg text-(--color-muted) dark:text-(--color-muted-dark) hover:text-(--color-ink) dark:hover:text-white hover:bg-(--color-surface-muted) dark:hover:bg-(--color-surface-muted-dark) cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-brand-400)">
+              <Pencil size={13} aria-hidden="true" />
+            </button>
           )}
         </div>
         {isSpam ? (

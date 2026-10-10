@@ -74,6 +74,9 @@ function normalizeReview(r) {
     response: r.response ?? null,
     labelSource: r.label_source ?? null,
     aspects: r.aspects ?? null,
+    labelConfidence: r.label_confidence ?? null,
+    labelCheckedAt: r.label_checked_at ?? null,
+    needsCheck: r.needs_check ?? false,
   }
 }
 
@@ -233,6 +236,15 @@ export const api = {
     const data = await request(`/reviews/${id}`, {
       method: 'PUT',
       body: JSON.stringify(body),
+    })
+    return normalizeReview(data)
+  },
+
+  // The host confirms or corrects the labels: the full set they consider right (aspects left out = not mentioned)
+  async checkLabels(id, { sentiment, aspects }) {
+    const data = await request(`/reviews/${id}/labels`, {
+      method: 'PUT',
+      body: JSON.stringify({ sentiment, aspects }),
     })
     return normalizeReview(data)
   },

@@ -50,3 +50,9 @@ class Review(Base):
     label_source = Column(String, nullable=True)
     # {aspect: "positive" | "negative"} for aspects the review mentions. NULL = not analysed by the LLM.
     aspects = Column(JSON, nullable=True)
+    # Model labels: probability of the sentiment it chose (low = ask the host to check). NULL for other sources.
+    label_confidence = Column(Float, nullable=True)
+    # When the host confirmed or corrected the labels, and what the machine had said before (kept for training
+    # and for measuring the model against hosts; never shown as the current label).
+    label_checked_at = Column(DateTime(timezone=True), nullable=True)
+    machine_label = Column(JSON, nullable=True)

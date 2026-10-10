@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 # ── Property Schemas ──────────────────────────────────────────────────────
@@ -97,9 +97,28 @@ class ReviewOut(BaseModel):
     response: Optional[str]
     label_source: Optional[str] = None
     aspects: Optional[dict[str, str]] = None
+    label_confidence: Optional[float] = None
+    label_checked_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+    @computed_field
+    @property
+    def needs_check(self) -> bool:
+        """Ask the host "Is this label right?": keyword guesses always, model labels when it was unsure."""
+        from .ai import CHECK_BELOW
+        if self.label_checked_at is not None or self.is_spam:
+            return False
+        if self.label_source == "heuristic":
+            return True
+        return self.label_source == "model" and self.label_confidence is not None and self.label_confidence < CHECK_BELOW
+
+
+class LabelCheck(BaseModel):
+    """The host's verdict: the full set of labels they consider right (aspects not listed = not mentioned)."""
+    sentiment: Literal["positive", "neutral", "negative"]
+    aspects: dict[str, Literal["positive", "negative"]] = Field(default_factory=dict, max_length=20)
 
 
 # ── User & Auth Schemas ───────────────────────────────────────────────────
