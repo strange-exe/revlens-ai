@@ -16,14 +16,19 @@
 #      with the current aspect guide), baselines, train (xsmall: fits Render's 512 MB), eval, export
 #   3. checks the rebuilt test split is the same 40,529 reviews the deployed model was measured on
 #   4. downloads the deployed model from your private repo and scores old and new side by side
-#   5. backs up as deberta-v3-xsmall-s13-food.zip + revlens-results-food.tgz: the deployed file is never replaced
+#   5. backs up as deberta-v3-xsmall-s13-food2.zip + revlens-results-food2.tgz: the deployed file is never replaced
+#
+# On a machine that already ran it, the same command retrains only: data, teacher labels and baselines are reused.
 set -euo pipefail
 cd "$(dirname "$0")"
 source ./python_env.sh
 
-export RUN_SUFFIX="${RUN_SUFFIX:--food}"
+# -food2: retrained with per-aspect loss weights and xsmall's own learning rate (the -food run's WiFi head was dead).
+# A new suffix is a new model: data and teacher labels are reused, training/eval/export run again.
+export RUN_SUFFIX="${RUN_SUFFIX:--food2}"
 export BACKBONES="${BACKBONES:-microsoft/deberta-v3-xsmall}"
 export SEEDS="${SEEDS:-13}"
+export EPOCHS="${EPOCHS:-4}"   # the best epoch on val is kept, so a 4th can only help
 first_backbone=${BACKBONES%% *}; first_seed=${SEEDS%% *}
 export WINNER="${WINNER:-${first_backbone##*/}-s$first_seed$RUN_SUFFIX}"
 OLD_WINNER="${OLD_WINNER:-${first_backbone##*/}-s$first_seed}"   # the deployed model, for the comparison
@@ -96,7 +101,14 @@ export HF_HOME="${HF_HOME:-$(cd .. && pwd)/hf-cache}"
 mkdir -p "$HF_HOME"
 say "run started $(date -u '+%F %T UTC') | ml: $(pwd) | HF cache: $HF_HOME | model: $WINNER"
 
-# 1-2. The pipeline from scratch. It publishes nothing itself: the backup waits for the comparison (step 5).
+# A machine that already ran an earlier retrain has train/eval/export marked done: this model isn't trained yet,
+# so run those three again (data, teacher labels and baselines are kept: they don't depend on the model)
+if [[ ! -f "runs/$WINNER/history.json" && -f runs/.done_train ]]; then
+  say "earlier run found: reusing its data and teacher labels, training $WINNER"
+  rm -f runs/.done_train runs/.done_eval runs/.done_export
+fi
+
+# 1-2. The pipeline. It publishes nothing itself: the backup waits for the comparison (step 5).
 say "pipeline: setup, tests, data, teacher, baselines, train, eval, export"
 SKIP_PUBLISH=1 bash fix_and_run.sh
 
@@ -132,24 +144,35 @@ fi
 if [[ -f "$OLD_MODEL/labels.json" ]]; then
   export MODEL_THREADS="${MODEL_THREADS:-8}"
   TEACHER_EVAL=$(ls "$DATA"/teacher/test-eval.*.jsonl 2>/dev/null | head -1 || true)
-  models=(--model "old-$OLD_WINNER-int8=onnx:$OLD_MODEL" --model "new-$WINNER-int8=onnx:artifacts/$WINNER")
-  if [[ ! -f runs/eval-compare-sample/report.md ]]; then
+  models=(--model "old-$OLD_WINNER-int8=onnx:$OLD_MODEL")
+  # Earlier retrains on this machine (e.g. -food) join the comparison, so the table shows what this run changed
+  for prev in artifacts/"$OLD_WINNER"-*/; do
+    prev=${prev%/}
+    [[ -f "$prev/labels.json" && $(basename "$prev") != "$WINNER" ]] && models+=(--model "prev-$(basename "$prev")-int8=onnx:$prev")
+  done
+  models+=(--model "new-$WINNER-int8=onnx:artifacts/$WINNER")
+  CMP="runs/eval-compare$RUN_SUFFIX"   # per run: never reuse (or overwrite) an earlier retrain's comparison
+  if [[ ! -f "$CMP-sample/report.md" ]]; then
     say "old vs new on the 2,100-review sample (aspects vs the new teacher labels, incl. food)"
     .venv/bin/python -m revlens_ml.evaluate --data "$DATA" --subset eval_sample "${models[@]}" \
-      ${TEACHER_EVAL:+--reference-teacher "$TEACHER_EVAL"} --out runs/eval-compare-sample
+      ${TEACHER_EVAL:+--reference-teacher "$TEACHER_EVAL"} --out "$CMP-sample"
   fi
-  if [[ ! -f runs/eval-compare-test/report.md ]]; then
+  if [[ ! -f "$CMP-test/report.md" ]]; then
     say "old vs new on the full test split (sentiment vs the guests' star ratings)"
-    .venv/bin/python -m revlens_ml.evaluate --data "$DATA" --subset test "${models[@]}" --out runs/eval-compare-test
+    .venv/bin/python -m revlens_ml.evaluate --data "$DATA" --subset test "${models[@]}" --out "$CMP-test"
   fi
-  say "RESULT: old vs new, full test split"; head -6 runs/eval-compare-test/report.md
-  say "RESULT: old vs new, sample (aspect agreement with the teacher)"; head -6 runs/eval-compare-sample/report.md
-  .venv/bin/python - <<'PY'
-import json
-m = json.load(open("runs/eval-compare-sample/metrics.json"))["models"]
+  say "RESULT: old vs new, full test split"; head -8 "$CMP-test/report.md"
+  say "RESULT: old vs new, sample (aspect agreement with the teacher)"; head -8 "$CMP-sample/report.md"
+  say "RESULT: per aspect (macro-F1 vs teacher) and how many of the teacher's negative labels each model finds"
+  .venv/bin/python - "$CMP-sample/metrics.json" <<'PY'
+import json, sys
+m = json.load(open(sys.argv[1]))["models"]
 for name, r in m.items():
-    food = (r.get("aspects") or {}).get("vs_teacher", {}).get("food")
-    print(f"  {name}: food agreement with teacher (macro-F1) = {food if food is not None else 'none (no food head)'}")
+    a = r.get("aspects") or {}
+    scores = " ".join(f"{k}={v:.3f}" for k, v in a.get("vs_teacher", {}).items() if v is not None)
+    neg = " ".join(f"{k}={c['negative']['recall']:.2f}" for k, c in a.get("vs_teacher_by_class", {}).items()
+                   if "negative" in c)
+    print(f"  {name}\n    macro-F1: {scores}\n    negative recall: {neg}")
 PY
 else
   warn "no deployed model to compare against (set HF_TOKEN, or put it in $OLD_MODEL): comparison skipped"

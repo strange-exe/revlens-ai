@@ -80,6 +80,34 @@ def test_metrics_and_worst_errors():
     assert "negation" in errors.set_index("review_id").loc["a", "tags"]
 
 
+def test_aspect_loss_weights_rare_classes_per_aspect_and_flags_dead_heads():
+    import torch
+    from revlens_ml.labels import ASPECT_VALUES, ASPECTS
+    from revlens_ml.train import IGNORE, aspect_class_weights, aspect_loss, val_metrics
+    pos, neg, none = (ASPECT_VALUES.index(v) for v in ("positive", "negative", "not_mentioned"))
+    wifi, food = ASPECTS.index("wifi"), ASPECTS.index("food")
+    aspects = np.full((10, len(ASPECTS)), IGNORE)
+    aspects[:, wifi] = [pos, neg] + [none] * 8        # WiFi: rarely mentioned
+    aspects[:, food] = [pos] * 5 + [none] * 5
+    y = {"aspects": aspects, "real": np.ones(10, bool), "sentiment": np.zeros(10, int), "spam": np.zeros(10)}
+    w = aspect_class_weights(y)
+    assert w[wifi, neg] > w[wifi, none] and w[food, neg] == pytest.approx(np.sqrt(10 / 3))  # unseen class: count 1
+    assert np.all(w[ASPECTS.index("host")] == 1)      # no labels: unweighted
+
+    logits = torch.zeros(10, len(ASPECTS), len(ASPECT_VALUES), requires_grad=True)
+    loss = aspect_loss(logits, torch.tensor(aspects), torch.tensor(w))
+    assert loss is not None and torch.isfinite(loss)
+    loss.backward()
+    assert logits.grad[:, ASPECTS.index("host")].abs().sum() == 0   # unlabelled aspects get no gradient
+    assert aspect_loss(logits, torch.full((10, len(ASPECTS)), IGNORE), torch.tensor(w)) is None
+
+    probs = np.zeros((10, len(ASPECTS), len(ASPECT_VALUES)))
+    probs[..., none] = 1                                # a head that always says "not mentioned"
+    pred = {"sentiment": np.eye(3)[np.zeros(10, int)], "spam": np.zeros(10), "aspects": probs}
+    m = val_metrics(pred, y, 0.5)
+    assert set(m["dead_aspects"]) == {"wifi", "food"} and 0 < m["aspects_by_aspect"]["wifi"] < 0.5
+
+
 def test_aspect_metrics_report_a_class_the_model_never_predicts():
     from revlens_ml.evaluate import aspect_metrics
     from revlens_ml.labels import ASPECTS, RATED_ASPECTS

@@ -40,6 +40,7 @@ LIMIT_TRAIN="${LIMIT_TRAIN:-$D_LIMIT}"             # train reviews labelled by t
 LIMIT_VAL="${LIMIT_VAL:-5000}"
 BACKBONES="${BACKBONES:-microsoft/deberta-v3-xsmall microsoft/deberta-v3-small microsoft/deberta-v3-base}"
 EPOCHS="${EPOCHS:-3}"
+LR="${LR:-}"                                      # empty: per backbone, see lr_for
 BATCH_SIZE="${BATCH_SIZE:-$D_TRAIN_BS}"
 SEEDS="${SEEDS:-13}"                              # e.g. "13 14 15" to report mean ± std
 RUN_SUFFIX="${RUN_SUFFIX:-}"                      # e.g. -food: names runs/artifacts/zip so a retrain never reuses old names
@@ -181,6 +182,12 @@ baselines() {
   python -m revlens_ml.baselines --data "$DATA" --out runs/tfidf "${extra[@]}"
 }
 
+# Learning rate per backbone. xsmall's model card fine-tunes at 4.5e-5
+# (https://huggingface.co/microsoft/deberta-v3-xsmall); at 2e-5 its WiFi head never learned a mention.
+lr_for() {
+  if [[ -n "$LR" ]]; then echo "$LR"; elif [[ $1 == *xsmall* ]]; then echo 4.5e-5; else echo 2e-5; fi
+}
+
 train() {
   for backbone in $BACKBONES; do
     for seed in $SEEDS; do
@@ -188,7 +195,7 @@ train() {
       if [[ -f "$out/history.json" ]]; then echo "skip $out (trained)"; continue; fi
       python -m revlens_ml.train --backbone "$backbone" --data "$DATA" --seed "$seed" \
         --teacher "$DATA/teacher/train.$TEACHER_NAME.jsonl" --val-teacher "$DATA/teacher/val.$TEACHER_NAME.jsonl" \
-        --epochs "$EPOCHS" --batch-size "$BATCH_SIZE" --out "$out"
+        --epochs "$EPOCHS" --batch-size "$BATCH_SIZE" --lr "$(lr_for "$backbone")" --out "$out"
     done
   done
 }

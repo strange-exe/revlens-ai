@@ -7,7 +7,9 @@ Targets:
   sentiment  <- gold (the guest's own star rating)
   spam       <- gold (synthetic spam = True, real reviews assumed False)
   aspects    <- teacher LLM labels (ratings can't tell whether an aspect is mentioned); masked when missing
-The best epoch (val sentiment macro-F1) is kept; the spam threshold is tuned on val.
+The best epoch (mean of val sentiment macro-F1 and per-aspect macro-F1) is kept; the spam threshold is tuned on val.
+Aspect losses are weighted per aspect (rare classes count more), and a head that predicts one class for every val
+review is reported as dead.
 """
 import argparse
 import json
@@ -115,6 +117,26 @@ def best_threshold(probs: np.ndarray, gold: np.ndarray) -> tuple[float, float]:
     return float(np.median(best)), float(scores.max())
 
 
+def aspect_class_weights(y: dict) -> np.ndarray:
+    """(aspects, values) loss weights, square-root inverse frequency per aspect, from real labelled reviews.
+    One pooled loss let a rarely mentioned aspect collapse to "not_mentioned": xsmall's WiFi head did, and
+    predicted it for every review. The square root boosts rare classes without flooding false mentions."""
+    weights = np.ones((len(ASPECTS), len(ASPECT_VALUES)), dtype=np.float32)
+    for j in range(len(ASPECTS)):
+        col = y["aspects"][y["real"], j]
+        counts = np.bincount(col[col != IGNORE], minlength=len(ASPECT_VALUES))
+        if counts.sum():
+            weights[j] = np.sqrt(counts.sum() / (len(ASPECT_VALUES) * np.maximum(counts, 1)))
+    return weights
+
+
+def aspect_loss(logits: torch.Tensor, target: torch.Tensor, weights: torch.Tensor) -> torch.Tensor | None:
+    """Mean over aspects of each aspect's own weighted cross-entropy; None when the batch has no aspect labels."""
+    losses = [nn.functional.cross_entropy(logits[:, j].float(), target[:, j], weight=weights[j], ignore_index=IGNORE)
+              for j in range(target.shape[1]) if (target[:, j] != IGNORE).any()]
+    return torch.stack(losses).mean() if losses else None
+
+
 def val_metrics(pred: dict, y: dict, spam_threshold: float) -> dict:
     s_mask = y["sentiment"] != IGNORE
     # Real reviews with teacher labels only: synthetic spam is trivially "not_mentioned" and would inflate the score
@@ -126,9 +148,30 @@ def val_metrics(pred: dict, y: dict, spam_threshold: float) -> dict:
     if a_mask.any():
         metrics["aspects_macro_f1_vs_teacher"] = f1_score(
             y["aspects"][a_mask], pred["aspects"].argmax(-1)[a_mask], average="macro")
-    metrics = {k: float(v) for k, v in metrics.items()}
+        # Per aspect too: the pooled score above hid a WiFi head that never predicted a mention
+        by_aspect, dead = {}, []
+        for j, a in enumerate(ASPECTS):
+            m = a_mask[:, j]
+            if not m.any():
+                continue
+            gold, got = y["aspects"][m, j], pred["aspects"][m, j].argmax(-1)
+            by_aspect[a] = float(f1_score(gold, got, average="macro", zero_division=0))
+            if len(np.unique(gold)) > 1 and len(np.unique(got)) == 1:
+                dead.append(a)
+        metrics["aspects_by_aspect"] = by_aspect
+        metrics["aspects_mean_macro_f1"] = float(np.mean(list(by_aspect.values())))
+        metrics["dead_aspects"] = dead
+    metrics = {k: float(v) if isinstance(v, (float, np.floating)) else v for k, v in metrics.items()}
     metrics["aspects_val_reviews"] = int(a_mask.any(1).sum())
     return metrics
+
+
+def selection_score(metrics: dict) -> float:
+    """Which epoch to keep: sentiment and aspects count equally. Sentiment alone kept epochs whose aspect
+    heads were still poor, because nothing looked at them."""
+    if "aspects_mean_macro_f1" in metrics:
+        return (metrics["sentiment_macro_f1"] + metrics["aspects_mean_macro_f1"]) / 2
+    return metrics["sentiment_macro_f1"]
 
 
 def git_commit() -> str | None:
@@ -178,7 +221,8 @@ def main() -> None:
     counts = np.bincount(y_train["sentiment"][y_train["sentiment"] != IGNORE], minlength=len(SENTIMENTS))
     weights = torch.tensor(counts.sum() / (len(SENTIMENTS) * np.maximum(counts, 1)), dtype=torch.float, device=device)
     sentiment_loss = nn.CrossEntropyLoss(weight=weights, ignore_index=IGNORE)
-    aspect_loss = nn.CrossEntropyLoss(ignore_index=IGNORE)
+    a_weights = aspect_class_weights(y_train)
+    a_weights_t = torch.tensor(a_weights, device=device)
     spam_loss = nn.BCEWithLogitsLoss()
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
@@ -190,6 +234,7 @@ def main() -> None:
     config = {
         "backbone": args.backbone, "args": vars(args), "sentiments": list(SENTIMENTS), "aspects": list(ASPECTS),
         "aspect_values": list(ASPECT_VALUES), "max_len": args.max_len, "class_weights": weights.tolist(),
+        "aspect_class_weights": {a: a_weights[j].round(3).tolist() for j, a in enumerate(ASPECTS)},
         "train_rows": len(train_df), "val_rows": len(val_df), "teacher_labels": len(teacher),
         "device": torch.cuda.get_device_name() if device == "cuda" else platform.processor(), "bf16": amp,
         "versions": {"torch": torch.__version__, "transformers": transformers.__version__}, "git": git_commit(),
@@ -205,8 +250,9 @@ def main() -> None:
             # Masked losses are NaN (0/0) when a batch has no target for them, so add them only when present
             if (batch["sentiment"] != IGNORE).any():
                 loss = loss + sentiment_loss(s.float(), batch["sentiment"])
-            if (batch["aspects"] != IGNORE).any():
-                loss = loss + args.aspect_weight * aspect_loss(a.float().flatten(0, 1), batch["aspects"].flatten())
+            a_loss = aspect_loss(a, batch["aspects"], a_weights_t)
+            if a_loss is not None:
+                loss = loss + args.aspect_weight * a_loss
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
@@ -222,8 +268,10 @@ def main() -> None:
                    "spam_threshold": threshold, **val_metrics(pred, y_val, threshold)}
         history.append(metrics)
         print(json.dumps(metrics))
-        if metrics["sentiment_macro_f1"] > best:
-            best = metrics["sentiment_macro_f1"]
+        if metrics.get("dead_aspects"):
+            print(f"  WARNING: these aspect heads predict one class for every val review: {metrics['dead_aspects']}")
+        if selection_score(metrics) > best:
+            best = selection_score(metrics)
             model.save(out, tokenizer, {**config, "spam_threshold": threshold, "best_epoch": epoch})
             print(f"  saved best -> {out}")
     (out / "history.json").write_text(json.dumps(history, indent=2))
