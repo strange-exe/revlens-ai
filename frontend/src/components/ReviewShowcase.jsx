@@ -1,16 +1,17 @@
 import { Star, ShieldAlert } from "lucide-react"
 import { ASPECT_SHORT } from "../services/reviewMetrics"
 
-// RevLens demo reviews with the labels Gemini actually produced for them (aspect backfill, 2026-10-04).
-// Shown as a product demo, never as customer testimonials.
+// RevLens demo reviews with the labels the deployed model gives them (deberta-v3-xsmall-s13-food2-u8, 2026-10-10).
+// Copied from its output unchanged, including its misses (Karan's 1-star review reads "neutral" to it).
+// Re-run them when the model changes. Shown as a product demo, never as customer testimonials.
 const samples = [
   { id: 4, guest: "Vikram", property: "Lakeview Cottage", rating: 3, sentiment: "neutral",
     text: "Decent place but the road leading to the property is in bad condition. The rooms were clean and comfortable.",
-    aspects: { cleanliness: "positive", location: "negative" } },
-  { id: 8, guest: "Karan", property: "Lakeview Cottage", rating: 1, sentiment: "negative",
+    aspects: { cleanliness: "positive", location: "negative", amenities: "positive" } },
+  { id: 8, guest: "Karan", property: "Lakeview Cottage", rating: 1, sentiment: "neutral",
     text: "Not worth the price. The lake was far from the property despite the name. Breakfast options were very limited.",
-    aspects: { location: "negative", value: "negative" } },
-  { id: 11, guest: "TravelDealsBot", property: "Sunset Villa", rating: 1, sentiment: "negative", spam: true,
+    aspects: { location: "negative", value: "negative", amenities: "negative", food: "negative" } },
+  { id: 11, guest: "TravelDealsBot", property: "Sunset Villa", rating: 1, sentiment: "positive", spam: true,
     text: "AMAZING DISCOUNTS! Get 50% off homestays and hotels by clicking here: http://promo-hotels-spam.ru/discount",
     aspects: {} },
 ]

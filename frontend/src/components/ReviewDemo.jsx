@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { Star, ShieldAlert } from "lucide-react"
 import AnimatedTabs from "./fx/AnimatedTabs"
 
-// Demo reviews with the labels Gemini actually gave them (same data as ReviewShowcase).
+// Demo reviews with the labels the deployed model gives them (same data and model as ReviewShowcase).
 // Highlights mark the words behind each label; the draft replies are examples, shown as such.
 const SAMPLES = [
   { id: "rahul", guest: "Rahul", property: "Sunset Villa", rating: 4, sentiment: "Positive", spam: false,
@@ -11,12 +11,12 @@ const SAMPLES = [
     draft: "Thank you, Rahul! We're glad you enjoyed the pool and our team. You're right about the WiFi, and we're looking at a faster connection." },
   { id: "vikram", guest: "Vikram", property: "Lakeview Cottage", rating: 3, sentiment: "Neutral", spam: false,
     parts: ["Decent place but ", ["the road leading to the property is in bad condition", "neg", "Location −"], ". ",
-      ["The rooms were clean and comfortable", "pos", "Cleanliness +"], "."],
+      ["The rooms were clean and comfortable", "pos", "Cleanliness + · Amenities +"], "."],
     draft: "Thank you, Vikram. We're glad the rooms were comfortable, and sorry about the road. We'll add clearer directions to our listing." },
-  { id: "karan", guest: "Karan", property: "Lakeview Cottage", rating: 1, sentiment: "Negative", spam: false,
+  { id: "karan", guest: "Karan", property: "Lakeview Cottage", rating: 1, sentiment: "Neutral", spam: false,
     parts: [["Not worth the price", "neg", "Value −"], ". ", ["The lake was far from the property despite the name", "neg", "Location −"],
-      ". Breakfast options were very limited."],
-    draft: "Karan, thank you for the honest feedback. We're sorry the stay didn't feel like good value, and we'll make the distance to the lake clear." },
+      ". ", ["Breakfast options were very limited", "neg", "Food − · Amenities −"], "."],
+    draft: "Karan, thank you for the honest feedback. We're sorry the stay didn't feel like good value and that breakfast had so few options. We'll make the distance to the lake clear." },
   { id: "spam", guest: "TravelDealsBot", property: "Sunset Villa", rating: 1, sentiment: "n/a", spam: true,
     parts: ["AMAZING DISCOUNTS! Get 50% off homestays and hotels by ", ["clicking here: http://promo-hotels-spam.ru/discount", "neg", "Spam"]],
     draft: null },
@@ -53,7 +53,7 @@ function Specimen({ sample, compact }) {
       </blockquote>
 
       <dl className="grid grid-cols-3 border-t border-(--color-border) dark:border-(--color-border-dark) text-xs">
-        {[["Sentiment", sample.sentiment], ["Spam", sample.spam ? "Yes, held back" : "No"], ["Labelled by", "LLM"]].map(([k, v]) => (
+        {[["Sentiment", sample.sentiment], ["Spam", sample.spam ? "Yes, held back" : "No"], ["Labelled by", "AI model"]].map(([k, v]) => (
           <div key={k} className="px-5 sm:px-6 py-3 border-r last:border-r-0 border-(--color-border) dark:border-(--color-border-dark)">
             <dt className="text-(--color-muted) dark:text-(--color-muted-dark)">{k}</dt>
             <dd className="demo-fade mt-0.5 font-semibold text-(--color-ink) dark:text-white" style={{ "--d": `${done}s` }}>{v}</dd>
