@@ -211,6 +211,34 @@ no ratings, so this shows how the model behaves on Indian hotels, not whether it
   new region, not the language of RevLens's users (short Airbnb and Google reviews, Hinglish). Only the
   host-labelled test set (licence plan, phase B) measures that.
 
+## False alarms on real reviews, and very short reviews (found 2026-10-10)
+
+**Spam head on real, unseen text.** On the 20,216 real Amazon reviews of Salminen et al.'s fake-review set (CC BY
+4.0; nothing trained), 19 were flagged (0.09%). Read one by one: 5 are spam-like (blog and YouTube links,
+repeated text, an all-caps app promotion), 8 are raw HTML from the scrape, and about 6 are genuine false alarms,
+mostly very short ("Get the 8 inch, unless you specifically need a 6"). By length, plain-text false alarms were
+0.61% under 60 characters and at most 0.05% above.
+
+**Very short reviews break the model.** On 60 hand-written reviews of 1-8 words
+(`backend/tests/data/short_reviews.json`, obvious labels, 5 in Hinglish):
+
+| Words | Model: sentiment right | Model: flagged as spam | Gemini: right | Gemini: spam |
+|---|---|---|---|---|
+| 1 | 5 / 11 | 11 | 11 / 11 | 0 |
+| 2 | 8 / 13 | 7 | 12 / 13 | 0 |
+| 3-4 | 6 / 12 | 4 | 11 / 12 | 0 |
+| 5-6 | 13 / 16 | 1 | 16 / 16 | 0 |
+| 7-8 | 6 / 8 | 0 | 8 / 8 | 0 |
+
+"Good", "Worst" and "5 stars" were flagged as spam, "Bad experience" and "Not recommended" read as positive, and
+every Hinglish review was flagged as spam. The training data explains it: every real review is a long TripAdvisor
+review, while the synthetic spam is short, so the model learned that short means spam.
+
+Fix (backend): reviews under 5 words, or under 60% everyday English words, skip the model and go to Gemini (with
+names hidden), then keyword rules, which always ask the host to check. No review in the TripAdvisor or New Delhi
+samples is affected (all are at least 68% everyday English; one New Delhi review is under 5 words). The lasting
+fix is training on short, real homestay reviews.
+
 ## Limits to keep next to these numbers
 
 1. **Domain shift.** Trained and tested on large US/EU hotels; RevLens serves Indian homestays. Expect lower

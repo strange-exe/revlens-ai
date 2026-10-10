@@ -302,18 +302,49 @@ def build_batch_classification_prompt(items: list[tuple[str, str]]) -> str:
     )
 
 
+# The model learned from long English hotel reviews, with short synthetic spam. On hand-written short reviews
+# (backend/tests/data/short_reviews.json) it got 19 of 36 reviews of 1-4 words right and flagged 22 as spam,
+# and flagged every Hinglish review as spam; Gemini got 34 of 36 right with none flagged. So reviews shorter than
+# this, or mostly not everyday English, go to Gemini (then keyword rules). Every real review in the TripAdvisor
+# and New Delhi samples (4,117) is at least 68% everyday English; the Hinglish ones were 50% or less.
+MODEL_MIN_WORDS = 5
+MODEL_MIN_ENGLISH = 0.6
+
+
+def model_suits(text: str) -> bool:
+    """Is this review like the ones the fine-tuned model was trained on (long enough, mostly English)?"""
+    from .redact import _common_words
+    words = re.findall(r"[a-z']+", text.lower())
+    if len(words) < MODEL_MIN_WORDS:
+        return False
+    common = _common_words()
+    return sum(w in common for w in words) / len(words) >= MODEL_MIN_ENGLISH
+
+
 def classify_reviews(items: list[tuple[str, str]]) -> list[Classification]:
     """Label many (text, guest_name) reviews at once, for imports. Same chain as single reviews
     (model -> Gemini -> keyword rules), batched: one model call, or one Gemini request per BATCH_SIZE.
-    Anything Gemini leaves out or gets off-schema falls back to keyword rules, labelled as such."""
+    Reviews the model doesn't suit (model_suits) skip it. Anything Gemini leaves out or gets off-schema falls
+    back to keyword rules, labelled as such."""
     if not items:
         return []
     if _classifier is not None:
+        fit = [i for i, (text, _) in enumerate(items) if model_suits(text)]
         try:
-            return [Classification(r["sentiment"], r["is_spam"], "model", r["aspects"], r.get("confidence"))
-                    for r in _classifier.predict([text for text, _ in items])]
+            labels = {i: Classification(r["sentiment"], r["is_spam"], "model", r["aspects"], r.get("confidence"))
+                      for i, r in zip(fit, _classifier.predict([items[i][0] for i in fit]) if fit else [])}
         except Exception as e:
             logger.error(f"Fine-tuned classifier failed on a batch: {e}")
+            labels = {}
+        rest = [i for i in range(len(items)) if i not in labels]
+        if rest:
+            labels |= dict(zip(rest, _classify_without_model([items[i] for i in rest])))
+        return [labels[i] for i in range(len(items))]
+    return _classify_without_model(items)
+
+
+def _classify_without_model(items: list[tuple[str, str]]) -> list[Classification]:
+    """Gemini in batches, then keyword rules for anything it leaves out."""
     if not _gemini_configured():
         return [_heuristic_classification(text, guest) for text, guest in items]
 
@@ -471,7 +502,7 @@ def analyze_review_sentiment_and_spam(text: str, guest_name: str) -> Classificat
     the fine-tuned model (if loaded) -> Gemini -> keyword heuristics (no aspects).
     The result's `source` says which one answered.
     """
-    if _classifier is not None:
+    if _classifier is not None and model_suits(text):
         try:
             result = _classifier.predict([text])[0]
             return Classification(result["sentiment"], result["is_spam"], "model", result["aspects"],

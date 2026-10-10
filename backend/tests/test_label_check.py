@@ -39,7 +39,7 @@ def add(headers, pid, text):
 
 def test_only_unsure_model_labels_and_keyword_guesses_ask_for_a_check(host, monkeypatch):
     headers, pid = host
-    sure, unsure = add(headers, pid, "WiFi dropped."), add(headers, pid, "unsure WiFi dropped.")
+    sure, unsure = add(headers, pid, "The WiFi dropped all the time."), add(headers, pid, "unsure: the WiFi dropped all the time.")
     assert (sure["label_confidence"], sure["needs_check"]) == (0.97, False)
     assert (unsure["label_confidence"], unsure["needs_check"]) == (0.55, True)
     monkeypatch.setattr(ai, "_classifier", None)   # no model, no Gemini key in tests: keyword rules answer
@@ -71,7 +71,7 @@ def test_correction_is_stored_as_a_human_label_and_keeps_what_the_model_said(hos
 
 def test_confirming_keeps_the_labels_and_stops_asking(host):
     headers, pid = host
-    review = add(headers, pid, "unsure WiFi dropped.")
+    review = add(headers, pid, "unsure: the WiFi dropped all the time.")
     res = client.put(f"/api/reviews/{review['id']}/labels", headers=headers,
                      json={"sentiment": review["sentiment"], "aspects": review["aspects"]})
     assert res.json()["needs_check"] is False and res.json()["aspects"] == {"wifi": "negative"}
@@ -84,13 +84,13 @@ def test_confirming_keeps_the_labels_and_stops_asking(host):
 ])
 def test_invalid_labels_are_rejected(host, payload):
     headers, pid = host
-    review = add(headers, pid, "unsure WiFi dropped.")
+    review = add(headers, pid, "unsure: the WiFi dropped all the time.")
     assert client.put(f"/api/reviews/{review['id']}/labels", headers=headers, json=payload).status_code == 422
 
 
 def test_another_hosts_review_cannot_be_checked(host):
     headers, pid = host
-    review = add(headers, pid, "unsure WiFi dropped.")
+    review = add(headers, pid, "unsure: the WiFi dropped all the time.")
     other = client.post("/api/auth/register", json={
         "email": f"other-{uuid.uuid4().hex[:8]}@example.com", "password": "a-long-test-password"}).json()
     res = client.put(f"/api/reviews/{review['id']}/labels", headers={"Authorization": f"Bearer {other['access_token']}"},
@@ -123,4 +123,4 @@ def test_shared_sample_reviews_are_read_only(host):
 def test_single_review_takes_the_property_name_from_the_database(host):
     """Imports already did; a single add used to store whatever property name the browser sent."""
     headers, pid = host
-    assert add(headers, pid, "WiFi dropped.")["property_name"] == "Pine Stay"   # add() sends "x"
+    assert add(headers, pid, "The WiFi dropped all the time.")["property_name"] == "Pine Stay"   # add() sends "x"

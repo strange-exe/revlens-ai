@@ -1,4 +1,5 @@
 """Phase 3: the fine-tuned model answers first, and failures fall back visibly."""
+import json
 import os
 
 import pytest
@@ -27,16 +28,58 @@ def model(monkeypatch):
 
 def test_model_answers_first_and_is_tagged(model, gemini):
     model()
-    result = ai.analyze_review_sentiment_and_spam("The wifi never worked.", "Asha")
+    result = ai.analyze_review_sentiment_and_spam("The wifi never worked during our stay.", "Asha")
     assert (result.sentiment, result.source, result.aspects) == ("negative", "model", {"wifi": "negative"})
     assert gemini == []  # no LLM call when the model answered
 
 
 def test_model_failure_falls_back_to_gemini(model, gemini, caplog):
     model(fail=True)
-    result = ai.analyze_review_sentiment_and_spam("Lovely stay", "Asha")
+    result = ai.analyze_review_sentiment_and_spam("Lovely stay with a kind host", "Asha")
     assert result.source == "llm" and len(gemini) == 1
     assert "Fine-tuned classifier failed" in caplog.text
+
+
+class RecordingModel(FakeModel):
+    def __init__(self):
+        super().__init__()
+        self.seen = []
+
+    def predict(self, texts):
+        self.seen += list(texts)
+        return super().predict(texts)
+
+
+def test_short_and_hinglish_reviews_skip_the_model(monkeypatch, gemini):
+    """The model flagged "Good", "Worst" and every Hinglish review as spam; those go to Gemini instead."""
+    import json
+    from pathlib import Path
+    model = RecordingModel()
+    monkeypatch.setattr(ai, "_classifier", model)
+    for text in ("Good", "Bad experience", "Thank you Rakesh ji", "Bahut ganda room tha", "Paise vasool, khana bahut accha tha"):
+        assert ai.analyze_review_sentiment_and_spam(text, "Asha").source == "llm"
+    assert model.seen == [] and len(gemini) == 5
+    long = "The room was clean and the host was very helpful throughout our stay."
+    assert ai.analyze_review_sentiment_and_spam(long, "Asha").source == "model" and model.seen == [long]
+
+    # Every hand-written review of 1-4 words, and every Hinglish one, is routed away from the model
+    items = json.loads((Path(__file__).parent / "data" / "short_reviews.json").read_text(encoding="utf-8"))
+    hinglish = {"Paise vasool, khana bahut accha tha", "Bahut ganda room tha", "Mast jagah hai", "Theek thaak tha",
+                "Bekaar service"}
+    for text, _ in items:
+        if len(text.split()) <= 4 or text in hinglish:
+            assert not ai.model_suits(text), text
+
+
+def test_import_sends_only_suitable_reviews_to_the_model(monkeypatch, gemini):
+    model = RecordingModel()
+    monkeypatch.setattr(ai, "_classifier", model)
+    gemini.reply = json.dumps([{"index": 0, "sentiment": "negative", "is_spam": False,
+                                "aspects": {n: "not_mentioned" for n in ai.ASPECT_GUIDE}}])
+    long = "The room was clean and the host was very helpful throughout our stay."
+    labels = ai.classify_reviews([(long, "A"), ("Worst", "B"), (long + " Again.", "C")])
+    assert [l.source for l in labels] == ["model", "llm", "model"]   # order kept, one Gemini request
+    assert model.seen == [long, long + " Again."] and len(gemini) == 1
 
 
 def test_missing_model_dir_is_a_no_op(monkeypatch):
