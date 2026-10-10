@@ -13,7 +13,7 @@ Read [DATASETS.md](DATASETS.md) first: every number below inherits its label lim
 - **Models:** DeBERTa-v3 xsmall / small / base with sentiment, spam and six aspect heads (the aspect list has since grown to seven with `food`; these runs predate it, see the
   food retrain below), one seed (13).
   Baselines: keyword heuristic (the old production fallback) and TF-IDF + logistic regression.
-- **Deployed:** `deberta-v3-xsmall-s13-food` (seven aspects), int8 ONNX. xsmall is the only size that fits
+- **Deployed:** `deberta-v3-xsmall-s13-food2` (seven aspects), int8 ONNX. xsmall is the only size that fits
   Render's free 512 MB instance (~427 MB peak RAM for the six-aspect model).
 
 ## Scores on the full test split (40,529 reviews)
@@ -79,37 +79,62 @@ alone; probabilities moved by up to 0.07). A host importing 25 reviews could get
 adding them one by one. Production now scores each review in its own unpadded run, which is deterministic and
 was about 2.5x faster on one CPU thread. The test numbers in the truncation table were measured this way.
 
-## Retrain with a food aspect (deployed: `deberta-v3-xsmall-s13-food`)
+## Retrain with a food aspect, and a dead WiFi head found on the way
 
-The aspect list grew to seven with `food` (meals, breakfast). The teacher re-labelled the training reviews with
-the new guide and xsmall was retrained (seed 13). The rebuilt test split is byte-identical to the frozen one
-(same sha256), so the numbers compare directly. Both models are scored the way production runs them: int8 ONNX,
-head+tail, one review at a time (which is why the old model shows 0.804 here, not the 0.801 above).
+The aspect list grew to seven with `food` (meals, breakfast). The teacher re-labelled the training reviews with the
+new guide and xsmall was retrained twice (seed 13). The rebuilt test split is byte-identical to the frozen one (same
+sha256), so the numbers compare directly. All models are scored the way production runs them: int8 ONNX, head+tail,
+one review at a time (which is why the six-aspect model shows 0.804 here, not the 0.801 above).
 
-| Full test split (40,529) | Sentiment macro-F1 | Accuracy | Neutral F1 | Spam F1 | Spam FPR | Aspect mention rate | Aspect polarity acc |
-|---|---|---|---|---|---|---|---|
-| Six-aspect model (previous) | 0.804 | 0.880 | 0.652 | 0.974 | 0.0% | 62.6% | 0.960 |
-| **Seven-aspect model** | **0.804** | 0.881 | 0.647 | 0.976 | 0.0% | 59.8% | 0.957 |
+**First retrain (`-food`), not deployed.** Its pooled scores matched the six-aspect model, but a per-class check
+showed the WiFi head predicted "not mentioned" for every review (macro-F1 0.315 is exactly that), in the deployed
+six-aspect model too, and food and location found only 28% and 12% of the teacher's complaints. The base and small
+models had learned WiFi (0.891, 0.849), so this was the xsmall training setup, not the data:
+- one pooled, unweighted aspect loss let a rarely mentioned aspect collapse to "not mentioned";
+- xsmall trained at 2e-5, the base model's rate; its [model card](https://huggingface.co/microsoft/deberta-v3-xsmall)
+  fine-tunes at 4.5e-5;
+- training logged one pooled aspect score and chose the epoch on sentiment alone, so nothing looked per aspect.
 
-Aspect agreement with the teacher (macro-F1) on the 2,100-review sample:
+**Second retrain (`-food2`), deployed.** Each aspect has its own loss with square-root inverse-frequency class
+weights, xsmall trains at 4.5e-5 for 4 epochs, the epoch is chosen on sentiment and mean per-aspect F1 together, and
+training warns when a head predicts one class for every val review. Both changes went in together, so the gain
+can't be split between them.
 
-| Model | Cleanliness | Location | WiFi | Host | Value | Amenities | Food | Mean |
-|---|---|---|---|---|---|---|---|---|
-| Six-aspect model | 0.842 | 0.638 | 0.315 | 0.816 | 0.771 | 0.761 | n/a | 0.690 |
-| **Seven-aspect model** | 0.830 | 0.665 | 0.315 | 0.837 | 0.788 | 0.789 | **0.698** | 0.703 |
+| Full test split (40,529) | Sentiment macro-F1 | Accuracy | Neutral F1 | Spam F1 | Spam FPR | Aspect polarity acc |
+|---|---|---|---|---|---|---|
+| Six-aspect model (previous) | 0.804 | 0.880 | 0.652 | 0.974 | 0.0% | 0.960 |
+| `-food` | 0.804 | 0.881 | 0.647 | 0.976 | 0.0% | 0.957 |
+| **`-food2` (deployed)** | **0.806** | **0.886** | 0.650 | 0.961 | 0.0% | 0.934 |
 
-- Sentiment and spam are unchanged on the full split. On the sample, sentiment reads 0.807 vs 0.796; with
-  2,100 reviews that gap is within noise, and the full split (19x larger) shows none.
-- Food is learned about as well as the other aspects (0.698 vs a 0.703 mean). No existing aspect fell by more
-  than 0.012 (cleanliness).
-- The aspect comparison slightly favours the new model: the reference labels come from the new teacher run,
-  which only the new model was trained on.
-- Fewer reviews get any aspect (59.8% vs 62.6%) although a category was added. No single aspect lost agreement,
-  so this most likely reflects the re-labelled teacher data being stricter about what counts as a mention.
-- WiFi is weak in both models (0.315): it is rarely mentioned, so there are few training examples. Not caused by
-  this retrain; it is the first aspect to improve.
-- Latency (p50 24 ms vs 38 ms on the GPU machine's CPU) is not a model difference: same architecture and size.
-  Render's own latency is the number that matters.
+Aspects on the 2,100-review sample, against the teacher: macro-F1, and recall / precision of the "negative" class
+(how many of the teacher's complaints the model finds, and how many of its complaints the teacher agrees with):
+
+| Aspect | Six-aspect F1 | `-food` F1 | **`-food2` F1** | Negative recall: six / `-food` / **`-food2`** | `-food2` negative precision |
+|---|---|---|---|---|---|
+| Cleanliness | 0.842 | 0.830 | **0.873** | 0.66 / 0.62 / **0.76** | 0.86 |
+| Location | 0.638 | 0.665 | **0.801** | 0.06 / 0.12 / **0.59** | 0.54 |
+| WiFi | 0.315 | 0.315 | **0.853** | 0.00 / 0.00 / **0.91** | 0.79 |
+| Host | 0.816 | 0.837 | **0.885** | 0.57 / 0.71 / **0.82** | 0.83 |
+| Value | 0.771 | 0.788 | **0.855** | 0.47 / 0.52 / **0.80** | 0.73 |
+| Amenities | 0.761 | 0.789 | **0.825** | 0.80 / 0.78 / **0.82** | 0.76 |
+| Food | n/a | 0.698 | **0.840** | n/a / 0.28 / **0.77** | 0.68 |
+| **Mean** | 0.690 | 0.703 | **0.847** | | |
+
+- Sentiment is unchanged to slightly better; spam false positives on real reviews stay at 0.0%. Spam F1 fell 0.013
+  (a little less of the synthetic spam is caught).
+- Finding complaints did not flood false ones: negative precision held or rose for every aspect (food 0.55 to 0.68).
+  Location complaints remain the weakest (precision 0.54).
+- Polarity against the guests' sub-ratings fell (0.960 to 0.934), mostly location (0.984 to 0.938) and value (0.975
+  to 0.917). The earlier models scored high by almost never calling these negative, while most sub-ratings are 4-5.
+  `-food2` is now close to the teacher's own agreement with sub-ratings (location 0.956, value 0.938): a guest can
+  rate location 5 and still mention street noise.
+- The aspect comparison favours the retrained models: the reference labels come from the teacher run they were
+  trained on. TF-IDF trained on the same labels scores 0.764, so `-food2`'s 0.847 is not just label matching.
+- Hand-written check (14 short reviews about food, WiFi, location): all 14 aspect labels correct; `-food` got 4 of
+  the 12 it was tried on.
+  Short single-aspect complaints often get overall sentiment "neutral": the sentiment head learned from star ratings
+  of long reviews, where one complaint rarely means 1-2 stars.
+- Peak server memory with `-food2`: 439 MB of Render's 512 MB.
 
 ## Limits to keep next to these numbers
 
