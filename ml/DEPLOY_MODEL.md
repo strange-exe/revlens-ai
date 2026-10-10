@@ -7,7 +7,7 @@ You run two scripts, one on each machine. Expect about 15 minutes of hands-on ti
 | B200 | `ml/publish_model.sh` | Packages the winning model and the results, then uploads both to a **private** Hugging Face repo |
 | Laptop | `backend/scripts/verify_model.py` | Downloads the model the same way Render will, runs the backend with it, checks the labels and the memory, and prints the Render settings |
 
-The deployed model is `deberta-v3-xsmall-s13-food2` (seven aspects, from `ml/retrain.sh`):
+The deployed model is `deberta-v3-xsmall-s13-food2-u8` (seven aspects, from `ml/retrain.sh`, weights stored as uint8):
 - Sentiment macro-F1 is 0.806 on the 40k test set (int8, as production runs it); see [RESULTS.md](RESULTS.md).
 - The int8 file is 87 MB, and the backend's peak RAM is about 439 MB.
 - xsmall is the only size that fits Render's free 512 MB.
@@ -66,8 +66,13 @@ Under **Settings**:
 - Start command: `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
 Then choose **Manual Deploy → Deploy latest commit**. Two signs it worked:
-- The build log shows `Model 'deberta-v3-xsmall-s13-food2-int8' ready in model (87 MB).`
-- The runtime log shows `Loaded fine-tuned classifier`, and the app's AI status notice disappears.
+- The build log shows `Model 'deberta-v3-xsmall-s13-food2-u8-int8' ready in model (87 MB).`
+- The runtime log shows `Loaded fine-tuned classifier ... (8 reference reviews match; CPU: ...)`, and the app's AI
+  status notice disappears. If it says `gives different answers on this CPU`, the model was refused and Gemini
+  serves instead: the int8 file computes differently on that CPU (see RESULTS.md); don't deploy it.
+
+The verify step on your laptop can't catch a CPU difference (laptops and GPU hosts usually have VNNI, Render's
+free CPUs don't). The start-up check on Render is what catches it.
 
 To roll back, delete `MODEL_URL` and redeploy. The app goes back to Gemini, then keyword rules.
 

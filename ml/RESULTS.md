@@ -13,7 +13,7 @@ Read [DATASETS.md](DATASETS.md) first: every number below inherits its label lim
 - **Models:** DeBERTa-v3 xsmall / small / base with sentiment, spam and six aspect heads (the aspect list has since grown to seven with `food`; these runs predate it, see the
   food retrain below), one seed (13).
   Baselines: keyword heuristic (the old production fallback) and TF-IDF + logistic regression.
-- **Deployed:** `deberta-v3-xsmall-s13-food2` (seven aspects), int8 ONNX. xsmall is the only size that fits
+- **Deployed:** `deberta-v3-xsmall-s13-food2-u8` (seven aspects), int8 ONNX with uint8 weights (see the CPU bug below). xsmall is the only size that fits
   Render's free 512 MB instance (~427 MB peak RAM for the six-aspect model).
 
 ## Scores on the full test split (40,529 reviews)
@@ -139,6 +139,24 @@ Aspects on the 2,100-review sample, against the teacher: macro-F1, and recall / 
   of praise, then "filthy... never again") `-food2` leans positive where the six-aspect model said negative; both
   clearly read the ending (negative probability rises by ~0.35), they weigh it differently.
 - Peak server memory with `-food2`: 439 MB of Render's 512 MB.
+
+## A deployment bug: int8 results depended on the server's CPU
+
+After `-food2` went live, the server labelled "Breakfast was cold and the WiFi kept dropping." as Cleanliness
+positive; the same model file and code gave WiFi, amenities and food negative on the laptop and the B200 host.
+Newer library versions were ruled out locally. The weights were int8 (U8S8), which ONNX Runtime computes with an
+instruction whose 16-bit sums can saturate on x86 CPUs that have AVX2/AVX512 but no VNNI; U8U8 has no such issue
+([ONNX Runtime quantization docs](https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html)).
+Every machine the model was evaluated on had VNNI; Render's server (AMD EPYC 7R13) does not.
+
+- Fix: the int8 weights and zero points are stored as uint8 (shifted by 128, the same values), `ml/revlens_ml/u8u8.py`.
+  On the laptop the converted model gives identical outputs on 600 reviews.
+- Guard: exports store reference answers for 8 reviews in `labels.json`; the backend re-runs them at start-up,
+  logs the CPU and whether it has VNNI, and refuses a model that answers differently (Gemini then serves).
+  On Render: "8 reference reviews match; CPU: AMD EPYC 7R13 Processor, 8 cores, VNNI: no".
+- Every score in this file was measured on VNNI CPUs, so it describes the U8U8 model on Render too, but not what
+  the U8S8 models served there before. `backend/scripts/relabel_model_reviews.py` re-labels reviews the model
+  labelled in that period.
 
 ## Limits to keep next to these numbers
 
