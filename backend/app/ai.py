@@ -34,7 +34,8 @@ ASPECT_GUIDE = {
              "'Expensive but worth it' is positive; a bare mention of the price is not_mentioned.",
     "amenities": "The room and facilities themselves: size, comfort, beds, furniture, heating/cooling, hot water, "
                  "appliances, pool, guest kitchen equipment. Whether they work, and whether they match the listing. "
-                 "Meals are food, not amenities.",
+                 "WiFi/internet is wifi and meals are food: label those ONLY under wifi or food, never also here, "
+                 "unless the guest separately mentions another facility.",
     # Added last so the aspect order of already-trained models is unchanged
     "food": "Meals and drinks: breakfast, dinner, tea and snacks, whether cooked by the host or served on site. "
             "Taste, variety, freshness, portions, temperature, and whether the meals promised were served. "

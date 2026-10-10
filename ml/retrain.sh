@@ -16,16 +16,17 @@
 #      with the current aspect guide), baselines, train (xsmall: fits Render's 512 MB), eval, export
 #   3. checks the rebuilt test split is the same 40,529 reviews the deployed model was measured on
 #   4. downloads the deployed model from your private repo and scores old and new side by side
-#   5. backs up as deberta-v3-xsmall-s13-food2.zip + revlens-results-food2.tgz: the deployed file is never replaced
+#   5. backs up as deberta-v3-xsmall-s13-food3.zip + revlens-results-food3.tgz: the deployed file is never replaced
 #
 # On a machine that already ran it, the same command retrains only: data, teacher labels and baselines are reused.
 set -euo pipefail
 cd "$(dirname "$0")"
 source ./python_env.sh
 
-# -food2: retrained with per-aspect loss weights and xsmall's own learning rate (the -food run's WiFi head was dead).
+# -food2: per-aspect loss weights and xsmall's own learning rate (the -food run's WiFi head was dead).
+# -food3: relabelled with the guide that keeps WiFi and meals out of amenities.
 # A new suffix is a new model: data and teacher labels are reused, training/eval/export run again.
-export RUN_SUFFIX="${RUN_SUFFIX:--food2}"
+export RUN_SUFFIX="${RUN_SUFFIX:--food3}"
 export BACKBONES="${BACKBONES:-microsoft/deberta-v3-xsmall}"
 export SEEDS="${SEEDS:-13}"
 export EPOCHS="${EPOCHS:-4}"   # the best epoch on val is kept, so a 4th can only help
@@ -100,6 +101,25 @@ export REVLENS_BACKEND="$(cd ../backend && pwd)"
 export HF_HOME="${HF_HOME:-$(cd .. && pwd)/hf-cache}"
 mkdir -p "$HF_HOME"
 say "run started $(date -u '+%F %T UTC') | ml: $(pwd) | HF cache: $HF_HOME | model: $WINNER"
+
+# Teacher labels are only valid for the labelling guide they were made with (backend/app/ai.py). When the guide
+# changed, keep the old labels (moved aside, never deleted) and label again; everything after the teacher re-runs.
+GUIDE_SHA=$(python3 - ../backend/app/ai.py <<'PY'
+import ast, hashlib, json, sys
+tree = ast.parse(open(sys.argv[1], encoding="utf-8").read())
+found = {t.id: ast.literal_eval(n.value) for n in tree.body if isinstance(n, ast.Assign)
+         for t in n.targets if isinstance(t, ast.Name) and t.id in ("ASPECT_GUIDE", "SENTIMENT_GUIDE")}
+print(hashlib.sha256(json.dumps(found, sort_keys=True).encode()).hexdigest()[:16])
+PY
+)
+if [[ -d "$DATA/teacher" ]] && ls "$DATA"/teacher/*.jsonl >/dev/null 2>&1 \
+   && [[ "$(cat "$DATA/teacher/GUIDE_SHA" 2>/dev/null || echo none)" != "$GUIDE_SHA" ]]; then
+  old="$DATA/teacher-before-$(date -u +%Y%m%d-%H%M%S)"
+  say "the labelling guide changed since these teacher labels were made: keeping them in $old and labelling again"
+  mv "$DATA/teacher" "$old"
+  rm -f runs/.done_teacher runs/.done_baselines runs/.done_train runs/.done_eval runs/.done_export
+fi
+mkdir -p "$DATA/teacher" && echo "$GUIDE_SHA" > "$DATA/teacher/GUIDE_SHA"
 
 # A machine that already ran an earlier retrain has train/eval/export marked done: this model isn't trained yet,
 # so run those three again (data, teacher labels and baselines are kept: they don't depend on the model)

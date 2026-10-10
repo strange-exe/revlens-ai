@@ -49,6 +49,13 @@ def test_llm_result_is_tagged_and_keeps_only_mentioned_aspects(gemini):
     assert result.aspects == {"cleanliness": "positive", "wifi": "negative"}
 
 
+def test_amenities_guide_keeps_wifi_and_meals_out():
+    # A WiFi complaint was also labelled amenities, so Analytics counted it twice
+    guide = ai.ASPECT_GUIDE["amenities"].lower()
+    assert "wifi" in guide and "only under wifi or food" in guide
+    assert "only under wifi or food" in ai.build_classification_prompt("The WiFi kept dropping.").lower()
+
+
 def test_food_is_its_own_aspect_with_a_definition_the_llm_sees(gemini):
     assert "food" in ai.ASPECT_GUIDE
     assert "  - food:" in ai.build_classification_prompt("Breakfast was cold.")
