@@ -140,6 +140,29 @@ Aspects on the 2,100-review sample, against the teacher: macro-F1, and recall / 
   clearly read the ending (negative probability rises by ~0.35), they weigh it differently.
 - Peak server memory with `-food2`: 439 MB of Render's 512 MB.
 
+## Error analysis: the 20 worst sentiment errors (deployed `-food2`)
+
+The 20 most confident wrong predictions on the 2,100-review sample (`errors_deberta-v3-xsmall-s13-food2.md` in
+the `-food2` results bundle), each read in full from the test split, not only the excerpt in that file. The
+deployed uint8 model gives the same wrong label on all 20.
+
+| Cause | Count | Is the model wrong? |
+|---|---|---|
+| **Star rating contradicts the text.** 3★ reviews that are lists of complaints, several ending "I would never stay here again" (7), or pure praise such as "I would definitely stay there again" (4); a 1★ review that asks to "give Olivia a raise"; a 5★ review titled "Sleepless in Texas" that ends "very dissatisfied"; a 4★ review that ends "paid over $300 to be insulted". | 14 | No: the gold label is the noisy part. |
+| **Lukewarm wording next to the star boundary.** 4★ reviews titled "An Okay Stay", "Could be better" and one listing many downsides, predicted neutral; 2★ reviews titled "Adequate for the price" and "Losing Ground" that mix complaints with "it is a great location though", predicted neutral. | 5 | Borderline: neutral is a fair reading. |
+| **Mixed, even-handed review called negative.** An overbooking story told calmly, ending "The receptionist and bell hops were nice and helpful" (3★). | 1 | Yes. |
+| Decisive content past the input cut-off | 0 | (was 4 of 20 before head+tail) |
+
+Takeaways:
+- 14 of the 20 worst errors are rating/text mismatches, against 9 of 20 for the six-aspect model before head+tail.
+  The most confident mistakes are now mostly the dataset's, which is what a model that has learned the text, not
+  the stars, should look like. It also means the test score understates text-sentiment accuracy, most for neutral.
+- No error came from the 256-token limit: six of the 20 are longer than 256 tokens (up to 616), and head+tail kept
+  the parts that decide them.
+- The real remaining weakness is the neutral boundary: lukewarm or even-handed text, where even people would
+  disagree. 3-star gold labels are the noisiest part of the data; an in-domain test set labelled by hosts
+  (licence plan, phase B) would measure this properly.
+
 ## A deployment bug: int8 results depended on the server's CPU
 
 After `-food2` went live, the server labelled "Breakfast was cold and the WiFi kept dropping." as Cleanliness
