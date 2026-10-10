@@ -79,7 +79,11 @@ def test_real_model_sees_the_end_of_a_long_review():
     model = OnnxClassifier(os.environ["TEST_MODEL_DIR"])
     praise = "The staff were lovely and the breakfast was great. " * 40   # far past 256 tokens
     verdict = "But the room was filthy, the shower was broken and we left early. Terrible, never again."
-    assert model.predict([praise + verdict])[0]["sentiment"] != "positive"
+    # A model that only read the start would score both texts the same. Whether one bad ending outweighs 40
+    # sentences of praise is the model's judgement (it differs between models), so assert the shift, not the label.
+    negative = model.config["sentiments"].index("negative")
+    without, with_end = (model.predict([t])[0]["sentiment_probs"][negative] for t in (praise, praise + verdict))
+    assert with_end - without > 0.2
 
 
 @pytest.mark.skipif(not os.getenv("TEST_MODEL_DIR"), reason="set TEST_MODEL_DIR to an exported model to run")

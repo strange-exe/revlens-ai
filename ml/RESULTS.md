@@ -134,6 +134,10 @@ Aspects on the 2,100-review sample, against the teacher: macro-F1, and recall / 
   the 12 it was tried on.
   Short single-aspect complaints often get overall sentiment "neutral": the sentiment head learned from star ratings
   of long reviews, where one complaint rarely means 1-2 stars.
+- Long reviews (the 7,759 real test reviews over 256 tokens, head+tail): sentiment macro-F1 0.806 vs 0.798 for the
+  six-aspect model (95% bootstrap CI of the difference [+0.000, +0.015]). On one constructed review (40 sentences
+  of praise, then "filthy... never again") `-food2` leans positive where the six-aspect model said negative; both
+  clearly read the ending (negative probability rises by ~0.35), they weigh it differently.
 - Peak server memory with `-food2`: 439 MB of Render's 512 MB.
 
 ## Limits to keep next to these numbers
