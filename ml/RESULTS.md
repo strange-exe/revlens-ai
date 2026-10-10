@@ -130,6 +130,11 @@ Aspects on the 2,100-review sample, against the teacher: macro-F1, and recall / 
   rate location 5 and still mention street noise.
 - The aspect comparison favours the retrained models: the reference labels come from the teacher run they were
   trained on. TF-IDF trained on the same labels scores 0.764, so `-food2`'s 0.847 is not just label matching.
+- On one-line reviews the model often adds amenities to a WiFi or food complaint ("Breakfast was cold and the
+  WiFi kept dropping" gets WiFi, food and amenities negative). The teacher labels are not the cause: amenities is
+  mentioned in 80% of training reviews without WiFi and 86% with it (77% / 87% for food), and the co-labelled
+  examples read show real room or facility comments. Long hotel reviews nearly always discuss the room, so the
+  model learned the pair; short in-domain reviews (licence plan, phase B) are the fix, not a relabel.
 - Hand-written check (14 short reviews about food, WiFi, location): all 14 aspect labels correct; `-food` got 4 of
   the 12 it was tried on.
   Short single-aspect complaints often get overall sentiment "neutral": the sentiment head learned from star ratings

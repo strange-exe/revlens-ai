@@ -107,7 +107,10 @@ then (*not checked*).
 3. Only reviews the guest posted publicly; drop a review from every dataset when the host deletes it or
    withdraws consent, and record which reviews each model version used.
 4. Train on scrubbed text: guest names, contacts and booking ids removed from the text itself, not only the name field.
-5. Keep personal data out of Gemini's free tier (scrub names in the text, use the paid tier, or don't send it).
+5. Keep personal data out of Gemini's free tier. Done 2026-10-10: `backend/app/redact.py` replaces names, emails
+   and phone numbers in review text with placeholders before every Gemini call and puts them back in replies.
+   Its everyday-word list (`backend/app/data/common_words.txt`) is built from the TripAdvisor training split by
+   `backend/scripts/build_common_words.py`: single words that reviewers write in lower case, no review text.
 6. Airbnb reviews carry the most contractual risk (§11.1): leave them out of training until that is cleared.
 7. A lawyer should confirm: the Airbnb and Booking.com copying clauses, the guest's copyright, §3(c)(ii) for
    training, RevLens's role, and the IT Act §43A duties that apply today.
