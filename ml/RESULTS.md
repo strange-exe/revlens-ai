@@ -186,6 +186,31 @@ Every machine the model was evaluated on had VNNI; Render's server (AMD EPYC 7R1
   the U8S8 models served there before. `backend/scripts/relabel_model_reviews.py` re-labels reviews the model
   labelled in that period.
 
+## A first look at Indian reviews: OpinRank New Delhi (behaviour only, no accuracy)
+
+The deployed model on 2,117 New Delhi hotel reviews from OpinRank (UCI; a random 2,000 of 4,380 plus all 206
+reviews of 15 guest houses, inns, lodges and hostels), next to the 2,000-review TripAdvisor sample. OpinRank has
+no ratings, so this shows how the model behaves on Indian hotels, not whether it is right. Nothing was trained.
+
+| | TripAdvisor sample | New Delhi, all | New Delhi, small places |
+|---|---|---|---|
+| Positive / neutral / negative | 72 / 17 / 10% | 55 / 21 / 23% | 47 / 26 / 27% |
+| Asked for a host check (confidence < 0.8) | 12.4% | 13.0% | 11.7% |
+| Mentions: cleanliness / location / food / value | 50 / 73 / 35 / 36% | 52 / 51 / 51 / 51% | 72 / 61 / 39 / 53% |
+| Share of mentions that are complaints: location / value / host | 9 / 33 / 14% | 36 / 50 / 32% | 44 / 40 / 34% |
+
+- The model is not less sure of itself on Indian text: the share it would ask a host to check stays at 12-13%.
+- Reviews read by hand (20, including 4 from guest houses) got sensible labels: overcharging as value −,
+  "an hour from the centre by metro" as location −, a guest house's airport-pickup scam as host −. One over-reach:
+  a complaint about a bill that included food was also labelled food −.
+- New Delhi reviews are more negative and talk more about price and food. That may be the data (2000s
+  tourist reviews of Delhi hotels) and can't be separated from model error without ratings.
+- 18% of the texts contain HTML entities (`&amp;`) from the scrape; the model coped, and hosts' pasted text rarely
+  has them.
+- Limit: these are foreign tourists on TripAdvisor, the same platform and style as the training data. They test a
+  new region, not the language of RevLens's users (short Airbnb and Google reviews, Hinglish). Only the
+  host-labelled test set (licence plan, phase B) measures that.
+
 ## Limits to keep next to these numbers
 
 1. **Domain shift.** Trained and tested on large US/EU hotels; RevLens serves Indian homestays. Expect lower

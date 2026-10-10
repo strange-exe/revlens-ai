@@ -115,6 +115,18 @@ then (*not checked*).
 7. A lawyer should confirm: the Airbnb and Booking.com copying clauses, the guest's copyright, §3(c)(ii) for
    training, RevLens's role, and the IT Act §43A duties that apply today.
 
+## Used for a behaviour check only: OpinRank (UCI)
+[OpinRank](https://archive.ics.uci.edu/dataset/205/opinrank+review+dataset): ~259k TripAdvisor hotel reviews from
+10 cities, including 4,380 from New Delhi; text only, no ratings. UCI lists it under CC BY 4.0, but it was scraped
+from TripAdvisor, so that grant can't be relied on for TripAdvisor's content. Used once, unchanged and unpublished,
+to see how the deployed model behaves on Indian hotel reviews (RESULTS.md); never for training. Kept in the
+gitignored `ml/data/external/`.
+
+Checked 2026-10-10 and not used: Inside Airbnb (no Indian city), Datafiniti hotel reviews (US, CC BY-NC-SA 4.0: a
+possible extra sentiment source while RevLens stays non-commercial), Salminen et al. fake reviews (CC BY 4.0,
+machine-written product reviews: a possible extra spam signal), Yelp (educational use), Google Local (US, no
+licence stated), IndicSentiment (no licence published).
+
 ## Rejected
 - **HotelRec**: academic-only licence, ~50M reviews; too restrictive for a deployed model.
 - **515K Booking.com (Kaggle)**: "CC0" is the uploader's claim over Booking.com-owned scraped content.
