@@ -80,6 +80,20 @@ def test_metrics_and_worst_errors():
     assert "negation" in errors.set_index("review_id").loc["a", "tags"]
 
 
+def test_aspect_metrics_report_a_class_the_model_never_predicts():
+    from revlens_ml.evaluate import aspect_metrics
+    from revlens_ml.labels import ASPECTS, RATED_ASPECTS
+    n = 4
+    df = pd.DataFrame({f"gold_{a}": [None] * n for a in RATED_ASPECTS})
+    ref = pd.DataFrame({f"aspect_{a}": [None] * n for a in ASPECTS})
+    ref["aspect_food"] = ["negative", "negative", "positive", "not_mentioned"]
+    preds = pd.DataFrame({f"aspect_{a}": [None] * n for a in ASPECTS})
+    preds["aspect_food"] = ["positive", "not_mentioned", "positive", "not_mentioned"]
+    by_class = aspect_metrics(df, preds, ref)["vs_teacher_by_class"]["food"]
+    assert by_class["negative"] == {"precision": 0.0, "recall": 0.0, "f1": 0.0, "support": 2}
+    assert by_class["positive"]["recall"] == 1.0 and by_class["positive"]["precision"] == 0.5
+
+
 # ── regressions from code review ─────────────────────────────────────────
 
 def test_teacher_resume_survives_a_torn_last_line(tmp_path):

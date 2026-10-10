@@ -164,6 +164,13 @@ def aspect_metrics(df: pd.DataFrame, preds: pd.DataFrame, reference: pd.DataFram
             ref, p = reference[f"aspect_{a}"], preds[f"aspect_{a}"]
             m = ref.notna() & p.notna()
             out["vs_teacher"][a] = float(f1_score(ref[m], p[m], average="macro", zero_division=0)) if m.any() else None
+            if m.any():
+                # Macro-F1 alone hides a rare class the model never predicts (e.g. negative food): keep each class
+                classes = sorted(set(ref[m]) | set(p[m]))
+                prec, rec, f1, sup = precision_recall_fscore_support(ref[m], p[m], labels=classes, zero_division=0)
+                out.setdefault("vs_teacher_by_class", {})[a] = {
+                    c: {"precision": float(prec[i]), "recall": float(rec[i]), "f1": float(f1[i]), "support": int(sup[i])}
+                    for i, c in enumerate(classes)}
         scores = [v for v in out["vs_teacher"].values() if v is not None]
         out["vs_teacher_mean_macro_f1"] = float(np.mean(scores)) if scores else None
     return out
