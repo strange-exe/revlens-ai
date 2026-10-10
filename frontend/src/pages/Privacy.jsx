@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 import LegalPage from "../components/LegalPage"
-import { ISSUES_URL, LEGAL_UPDATED } from "../legal"
+import { ISSUES_URL, PRIVACY_UPDATED } from "../legal"
 
 // Keep in step with the backend: TRAINING_CONSENT_VERSION in backend/app/main.py names this wording.
 const sections = [
@@ -36,7 +36,9 @@ const sections = [
           <li><strong>Cloudflare</strong> serves the website.</li>
           <li><strong>Google</strong> handles "Sign in with Google" if you use it. Google's <strong>Gemini API</strong>
             drafts replies, answers your questions about your reviews, and labels reviews if our model is unavailable.
-            For this, the review text and property name are sent to Gemini; guest names are not. RevLens uses Gemini's
+            For this, the review text and property name are sent to Gemini, with names, email addresses and phone
+            numbers replaced by placeholders first; guest names are never sent. Our name detection catches most names
+            but not every one (for example, a name that is also an ordinary word). RevLens uses Gemini's
             free tier, and under Google's terms for that tier Google may use what is sent to improve its products, and
             human reviewers may read it.</li>
           <li><strong>Hugging Face</strong> stores our model files privately. None of your data goes there.</li>
@@ -74,8 +76,9 @@ const sections = [
     id: "guests", title: "Guests' information",
     body: (
       <p>Reviews contain guests' names and words. We use them only to run RevLens for you: to label them, draft
-        replies and answer your questions. Guest names are never sent to Gemini and are removed before any training
-        use.</p>
+        replies and answer your questions. Guest names are never sent to Gemini; names, email addresses and phone
+        numbers inside review text are replaced with placeholders before it is sent, and put back only in what you
+        see. Names and contact details are removed before any training use.</p>
     ),
   },
   {
@@ -109,7 +112,7 @@ export default function Privacy() {
     <LegalPage
       label="Privacy"
       title="Privacy Policy"
-      updated={LEGAL_UPDATED}
+      updated={PRIVACY_UPDATED}
       intro="RevLens is a free, non-commercial tool for homestay and small-hotel hosts. This page explains what it stores, who else handles it, and what you can do about it."
       sections={sections}
     />
