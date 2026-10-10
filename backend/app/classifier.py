@@ -23,6 +23,20 @@ def fit_ids(ids: list[int], max_len: int) -> list[int]:
     return ids[:half] + ids[-(max_len - half):]
 
 
+def cpu_summary() -> str:
+    """CPU model and whether it has VNNI: int8 results can differ on x86 CPUs without it (see self_check)."""
+    # Diagnostics only: never let reading it break model loading
+    try:
+        lines = Path("/proc/cpuinfo").read_text().splitlines()
+        name = next((ln.split(":", 1)[1].strip() for ln in lines if ln.startswith("model name")), "?")
+        flags = next((ln.split(":", 1)[1].split() for ln in lines if ln.startswith("flags")), [])
+        vnni = "yes" if {"avx512_vnni", "avx_vnni"} & set(flags) else "no"
+        return f"{name}, {os.cpu_count()} cores, VNNI: {vnni}"
+    except Exception:
+        import platform
+        return f"{platform.processor() or 'unknown CPU'}, {os.cpu_count()} cores, VNNI: unknown"
+
+
 def _softmax(x: np.ndarray) -> np.ndarray:
     e = np.exp(x - x.max(-1, keepdims=True))
     return e / e.sum(-1, keepdims=True)
@@ -45,6 +59,19 @@ class OnnxClassifier:
         options.intra_op_num_threads = int(os.getenv("MODEL_THREADS", "1"))
         self.session = ort.InferenceSession(
             str(model_dir / self.config["onnx_file"]), options, providers=["CPUExecutionProvider"])
+
+    def self_check(self) -> list[str]:
+        """Re-run the reference reviews in labels.json ("canary", written by the export) and list every
+        disagreement. An int8 model can compute differently on another CPU: a model verified on VNNI CPUs gave
+        wrong labels on a server without VNNI. Empty list = same answers as where the model was verified."""
+        canary = self.config.get("canary") or []
+        problems = []
+        for want, got in zip(canary, self.predict([c["text"] for c in canary])):
+            drift = float(np.abs(np.array(want["sentiment_probs"]) - np.array(got["sentiment_probs"])).max())
+            if want["aspects_all"] != got["aspects_all"] or drift > 0.05:
+                problems.append(f"{want['text'][:40]!r}: expected {want['aspects_all']}, got {got['aspects_all']}, "
+                                f"sentiment probability drift {drift:.2f}")
+        return problems
 
     def predict(self, texts: list[str]) -> list[dict]:
         # One review per run, never a padded batch: with the int8 model, batching made a review's label depend

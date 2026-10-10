@@ -424,9 +424,19 @@ def load_classifier():
         logger.info("MODEL_DIR not set: classification uses Gemini, then keyword heuristics.")
         return None
     try:
-        from .classifier import OnnxClassifier
-        _classifier = OnnxClassifier(model_dir)
-        logger.info(f"Loaded fine-tuned classifier '{_classifier.name}' from {model_dir}.")
+        from .classifier import OnnxClassifier, cpu_summary
+        model = OnnxClassifier(model_dir)
+        problems = model.self_check()
+        if problems:
+            # Wrong labels are worse than Gemini's: refuse the model and let the fallback chain serve
+            logger.error(f"Classifier '{model.name}' gives different answers on this CPU ({cpu_summary()}); "
+                         f"not using it. {len(problems)} reference review(s) differ: {'; '.join(problems)}")
+        else:
+            _classifier = model
+            checked = f"{len(model.config.get('canary') or [])} reference reviews match"
+            logger.info(f"Loaded fine-tuned classifier '{model.name}' from {model_dir} "
+                        f"({checked if model.config.get('canary') else 'no reference reviews to check'}; "
+                        f"CPU: {cpu_summary()}).")
     except Exception as e:
         logger.error(f"Could not load classifier from MODEL_DIR={model_dir}: {e}")
     return _classifier

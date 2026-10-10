@@ -63,6 +63,47 @@ def test_real_exported_model_loads_and_predicts():
     assert set(result["aspects_all"]) == set(model.config["aspects"]) <= set(ai.ASPECT_GUIDE)
 
 
+@pytest.mark.skipif(not os.getenv("TEST_MODEL_DIR"), reason="set TEST_MODEL_DIR to an exported model to run")
+def test_model_that_answers_differently_on_this_cpu_is_refused(monkeypatch, tmp_path, caplog):
+    """An int8 model verified on one CPU gave wrong labels on another; the reference answers catch that."""
+    import json
+    import logging
+    import shutil
+    from app.classifier import OnnxClassifier
+    caplog.set_level(logging.INFO)
+    src = os.environ["TEST_MODEL_DIR"]
+    shutil.copytree(src, tmp_path / "m")
+    labels_path = tmp_path / "m" / "labels.json"
+    labels = json.loads(labels_path.read_text())
+    reference = OnnxClassifier(src).predict(["Breakfast was cold and the WiFi kept dropping."])[0]
+    good = {"text": "Breakfast was cold and the WiFi kept dropping.", "sentiment_probs": reference["sentiment_probs"],
+            "aspects_all": reference["aspects_all"]}
+    monkeypatch.setenv("MODEL_DIR", str(tmp_path / "m"))
+
+    labels_path.write_text(json.dumps({**labels, "canary": [good]}))
+    monkeypatch.setattr(ai, "_classifier", None)
+    assert ai.load_classifier() is not None and "1 reference reviews match" in caplog.text
+
+    wrong = {**good, "aspects_all": {**good["aspects_all"], "cleanliness": "positive"}}  # what the server said
+    labels_path.write_text(json.dumps({**labels, "canary": [wrong]}))
+    monkeypatch.setattr(ai, "_classifier", None)
+    assert ai.load_classifier() is None
+    assert "gives different answers on this CPU" in caplog.text and "VNNI" in caplog.text
+
+
+def test_cpu_summary_reports_vnni_from_linux_cpuinfo(monkeypatch):
+    from pathlib import Path
+    from app import classifier
+    fake = {"vnni": "model name\t: Intel Xeon\nflags\t\t: fpu avx2 avx512f avx512_vnni\n",
+            "plain": "model name\t: AMD EPYC 7763\nflags\t\t: fpu avx2\n"}
+    for kind, expected in (("vnni", "Intel Xeon, ") , ("plain", "AMD EPYC 7763, ")):
+        monkeypatch.setattr(Path, "read_text", lambda self, *a, k=kind, **kw: fake[k])
+        summary = classifier.cpu_summary()
+        assert summary.startswith(expected) and summary.endswith("VNNI: yes" if kind == "vnni" else "VNNI: no")
+    monkeypatch.setattr(Path, "read_text", lambda self, *a, **kw: (_ for _ in ()).throw(OSError("no /proc")))
+    assert classifier.cpu_summary().endswith("VNNI: unknown")
+
+
 def test_fit_ids_keeps_short_reviews_whole_and_long_ones_head_and_tail():
     from app.classifier import fit_ids
     short = [101, 5, 6, 102]

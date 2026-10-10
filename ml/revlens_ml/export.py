@@ -9,6 +9,9 @@ int8 recipes are tried smallest-first; the first one whose sentiments agree with
 parity reviews ships. Measured on deberta-v3-xsmall (500 val reviews): quantizing everything 98.8% / 87 MB,
 keeping the FFN down-projection in fp32 99.4% / 108 MB, keeping the whole FFN in fp32 100% / 130 MB.
 The FFN is where int8 loses accuracy: its activations have the widest ranges.
+
+The int8 weights are then stored as uint8 (U8U8, lossless; see u8u8.py), and labels.json gets reference answers
+("canary") that the backend re-checks at start-up, so a CPU that computes differently is caught, not served.
 """
 import argparse
 import json
@@ -22,12 +25,20 @@ from onnxruntime.quantization import QuantType, quantize_dynamic
 
 from .labels import BACKEND_DIR
 from .model import MultiTaskModel
+from .u8u8 import convert as to_u8u8
 
 PARITY_TEXTS = [
     "Spotless room and the host was lovely, but the wifi kept dropping.",
     "Terrible. Dirty bathroom, rude staff and far too expensive.",
     "It was fine. Nothing special.",
     "AMAZING DISCOUNTS at http://cheap-stays.biz click now!!!",
+]
+# Reference reviews stored in labels.json with this machine's answers; the backend re-checks them at start-up
+CANARY_TEXTS = PARITY_TEXTS + [
+    "Breakfast was cold and the WiFi kept dropping.",
+    "Lovely host, great home-cooked food and a quiet location close to the market.",
+    "Overpriced for what you get, and the room smelled damp.",
+    "The street was noisy at night and it is far from everything.",
 ]
 PARITY_SAMPLE = 500   # val reviews: enough that the agreement estimate is within ~1-2 points
 MIN_AGREEMENT = 0.95
@@ -87,6 +98,7 @@ def export(run: Path, out: Path, parity_data: Path | None, opset: int) -> dict:
         # Per-channel scales keep transformer weights far closer to fp32 than one scale per tensor
         quantize_dynamic(str(onnx_path), str(int8_path), weight_type=QuantType.QInt8, per_channel=True,
                          nodes_to_exclude=[m for m in matmuls if keep_fp32(m)])
+        to_u8u8(int8_path, int8_path)  # same values, but no saturation on CPUs without VNNI (see u8u8.py)
         agree = int8_agreement(out, texts, ref_labels)
         attempt = {"recipe": recipe, "sentiment_agreement": agree, "size_mb": round(int8_path.stat().st_size / 1e6, 1)}
         report["int8_attempts"].append(attempt)
@@ -101,7 +113,23 @@ def export(run: Path, out: Path, parity_data: Path | None, opset: int) -> dict:
         best = max(a["sentiment_agreement"] for a in report["int8_attempts"])
         int8_path.unlink()  # never leave a failing int8 model where the deploy step would pick it up
         raise SystemExit(f"no int8 recipe reached {MIN_AGREEMENT:.0%} sentiment agreement (best {best:.1%})")
+    add_canary(out)
     return report
+
+
+def add_canary(out: Path) -> None:
+    """Store this machine's answers for CANARY_TEXTS in labels.json, for the backend's start-up self-check."""
+    import sys
+    sys.path.insert(0, str(BACKEND_DIR))
+    from app.classifier import OnnxClassifier, cpu_summary
+    labels_path = out / "labels.json"
+    labels = json.loads(labels_path.read_text())
+    labels.pop("canary", None)
+    results = OnnxClassifier(out).predict(CANARY_TEXTS)
+    labels["canary"] = [{"text": t, "sentiment_probs": [round(p, 4) for p in r["sentiment_probs"]],
+                         "aspects_all": r["aspects_all"]} for t, r in zip(CANARY_TEXTS, results)]
+    labels["canary_cpu"] = cpu_summary()
+    labels_path.write_text(json.dumps(labels, indent=2))
 
 
 def fp32_parity(onnx_path: Path, enc, ref) -> float:
@@ -126,11 +154,22 @@ def int8_agreement(out: Path, texts: list[str], ref_labels: list[str]) -> float:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Export a trained run to ONNX")
-    p.add_argument("--run", required=True)
+    p.add_argument("--run", help="trained run to export (required unless --finalize)")
     p.add_argument("--out", default="artifacts/revlens-classifier")
     p.add_argument("--parity-data", default="data/processed/val.parquet")
     p.add_argument("--opset", type=int, default=17)
+    p.add_argument("--finalize", metavar="DIR",
+                   help="instead: convert an already exported DIR to U8U8 in place and add its reference answers")
     args = p.parse_args()
+    if args.finalize:
+        out = Path(args.finalize)
+        model_file = out / json.loads((out / "labels.json").read_text())["onnx_file"]
+        print(f"U8U8: {to_u8u8(model_file, model_file)} tensors shifted")
+        add_canary(out)
+        print(f"reference answers added to {out / 'labels.json'}")
+        return
+    if not args.run:
+        p.error("--run is required")
     parity_data = Path(args.parity_data) if args.parity_data and Path(args.parity_data).exists() else None
     export(Path(args.run), Path(args.out), parity_data, args.opset)
 
