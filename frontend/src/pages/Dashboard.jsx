@@ -36,7 +36,7 @@ const accentMap = {
 }
 
 // Who flagged a spam review (backend `label_source`), in words a host understands
-const SOURCE_NAMES = { model: "AI model", llm: "AI", heuristic: "keyword rule", human: "you", sample: "sample data", unknown: "earlier version" }
+const SOURCE_NAMES = { model: "AI model", llm: "Gemini", heuristic: "keyword rule", human: "you", sample: "sample data", unknown: "earlier version" }
 
 function formatDelta(value, kind) {
   if (value == null) return null

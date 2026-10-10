@@ -15,8 +15,9 @@ const sentimentStyles = {
 
 // Who produced the sentiment/spam label (backend `label_source`)
 const labelSourceBadges = {
-  llm: { text: "AI", title: "Labelled by the AI model" },
-  model: { text: "AI", title: "Labelled by the trained model" },
+  // Named apart: the two engines label differently, and a host should be able to tell which one answered
+  llm: { text: "Gemini", title: "Labelled by Gemini (used when RevLens's own model is unavailable)" },
+  model: { text: "AI model", title: "Labelled by RevLens's trained model" },
   heuristic: { text: "Keyword guess", title: "AI was unavailable; labelled by a simple keyword rule" },
   human: { text: "Manual", title: "Labelled or corrected by a person" },
 }
