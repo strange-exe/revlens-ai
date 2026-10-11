@@ -19,8 +19,9 @@ const sections = [
             you agreed to.</li>
         </ul>
         <p>In your browser, RevLens keeps your sign-in token, a copy of your profile, your light or dark theme, and a
-          temporary copy of your dashboard data that is cleared when you sign out. There are no analytics, advertising
-          or tracking cookies.</p>
+          temporary copy of your dashboard data that is cleared when you sign out. There are no advertising or tracking
+          cookies. Cloudflare Web Analytics counts page visits for the public website without cookies and without
+          identifying you.</p>
       </>
     ),
   },
@@ -82,14 +83,35 @@ const sections = [
     ),
   },
   {
-    id: "choices", title: "Your choices",
+    id: "security", title: "Keeping it safe, and if something goes wrong",
+    body: (
+      <>
+        <p>Connections to RevLens are encrypted (HTTPS). Passwords are stored only as salted hashes. Each account can
+          only reach its own properties and reviews, and only the operator can access the database.</p>
+        <p>If a breach of personal data affects you, we will tell you without delay: what happened, when, what it is
+          likely to mean for you, what we have done about it, and what you can do. We will also report it to the Data
+          Protection Board of India as India's Digital Personal Data Protection rules require.</p>
+      </>
+    ),
+  },
+  {
+    id: "choices", title: "Your choices and rights",
     body: (
       <ul>
         <li>See everything we hold about your properties and reviews in your dashboard.</li>
         <li>Correct any label or review, or delete it.</li>
         <li>Turn training-data use on or off in Settings.</li>
         <li>Delete your account in Settings.</li>
+        <li>Ask for a summary of the personal data we hold about you, ask for a correction, or name someone who can
+          use these rights for you if you die or become unable to: use the contact below.</li>
       </ul>
+    ),
+  },
+  {
+    id: "complaints", title: "Complaints",
+    body: (
+      <p>If you're unhappy with how your data is handled, contact us (below). We will reply as soon as we can, and
+        within 90 days at most. If you're still not satisfied, you can complain to the Data Protection Board of India.</p>
     ),
   },
   {
@@ -98,9 +120,10 @@ const sections = [
       <>
         <p>If this policy changes, the date at the top changes. If the training-data section changes, we'll ask
           hosts who opted in to agree again before using their data under the new wording.</p>
-        <p>RevLens is run by Abhinesh Gangwar, an independent developer. For questions, open an issue on <a
-          href={ISSUES_URL} target="_blank" rel="noopener noreferrer">GitHub</a>. Issues are public, so don't include
-          personal details there; to delete your data, use Settings.</p>
+        <p>RevLens is run by Abhinesh Gangwar, an independent developer, who is also the contact for privacy questions,
+          requests and complaints. Open an issue on <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer">GitHub</a>.
+          Issues are public, so don't include personal details there: for a privacy request or complaint, just say
+          that you have one, and we'll arrange a private way to continue. To delete your data, use Settings.</p>
         <p>RevLens is not intended for anyone under 18.</p>
       </>
     ),
