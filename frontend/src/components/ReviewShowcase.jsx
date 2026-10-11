@@ -22,9 +22,18 @@ const SENTIMENT_TEXT = {
   negative: "text-rose-700 dark:text-rose-400",
 }
 
-function Sample({ review }) {
+// The first sample leads (the section's point: a mixed review), the other two stack beside it. On phones all three
+// stack in order, separated by rules.
+const LAYOUT = [
+  "md:col-span-7 md:row-span-2 md:pr-10",
+  "md:col-span-5 md:pl-10 md:border-l",
+  "md:col-span-5 md:pl-10 md:border-l",
+]
+
+function Sample({ review, index }) {
+  const featured = index === 0
   return (
-    <article className="reveal-up flex flex-col py-8 md:px-8 md:first:pl-0 md:last:pr-0 border-t md:border-t-0 md:border-l md:first:border-l-0 border-(--color-border) dark:border-(--color-border-dark)">
+    <article className={`reveal-up flex flex-col py-8 border-t border-(--color-border) dark:border-(--color-border-dark) ${index < 2 ? "md:border-t-0" : ""} ${LAYOUT[index]}`}>
       <header className="flex items-baseline justify-between gap-3">
         <p className="text-sm"><span className="font-semibold text-(--color-ink) dark:text-white">{review.guest}</span>
           <span className="text-(--color-muted) dark:text-(--color-muted-dark)"> · {review.property}</span></p>
@@ -34,7 +43,7 @@ function Sample({ review }) {
           ))}
         </span>
       </header>
-      <p className={`mt-4 text-base leading-relaxed flex-1 ${review.spam ? "text-(--color-muted) dark:text-(--color-muted-dark) line-through decoration-rose-500/60" : "text-(--color-ink) dark:text-white"}`}>
+      <p className={`mt-4 leading-relaxed flex-1 ${featured ? "font-heading text-xl sm:text-2xl md:text-[1.75rem] md:leading-snug tracking-[-0.01em] text-balance" : "text-base"} ${review.spam ? "text-(--color-muted) dark:text-(--color-muted-dark) line-through decoration-rose-500/60" : "text-(--color-ink) dark:text-white"}`}>
         &ldquo;{review.text}&rdquo;
       </p>
       <p className="mt-5 pt-4 border-t border-dashed border-(--color-border) dark:border-(--color-border-dark) flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold">
@@ -64,8 +73,8 @@ export default function ReviewShowcase() {
         <p className="mt-3 text-base text-(--color-muted) dark:text-(--color-muted-dark) max-w-xl">
           Demo reviews with the labels RevLens&rsquo;s AI gave them. A three-star review can still tell you the rooms are fine and the road is not.
         </p>
-        <div className="mt-10 grid md:grid-cols-3">
-          {samples.map((r) => <Sample key={r.id} review={r} />)}
+        <div className="mt-10 grid md:grid-cols-12 md:grid-rows-[auto_auto] border-b md:border-t border-(--color-border) dark:border-(--color-border-dark)">
+          {samples.map((r, i) => <Sample key={r.id} review={r} index={i} />)}
         </div>
       </div>
     </section>
