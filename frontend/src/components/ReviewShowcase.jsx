@@ -25,7 +25,8 @@ const SENTIMENT_TEXT = {
 // The first sample leads (the section's point: a mixed review), the other two stack beside it. On phones all three
 // stack in order, separated by rules.
 const LAYOUT = [
-  "md:col-span-7 md:row-span-2 md:pr-10",
+  // featured: its labels follow the quote, and the block sits centred in the tall cell instead of leaving a gap
+  "md:col-span-7 md:row-span-2 md:pr-10 md:justify-center",
   "md:col-span-5 md:pl-10 md:border-l",
   "md:col-span-5 md:pl-10 md:border-l",
 ]
@@ -43,7 +44,7 @@ function Sample({ review, index }) {
           ))}
         </span>
       </header>
-      <p className={`mt-4 leading-relaxed flex-1 ${featured ? "font-heading text-xl sm:text-2xl md:text-[1.75rem] md:leading-snug tracking-[-0.01em] text-balance" : "text-base"} ${review.spam ? "text-(--color-muted) dark:text-(--color-muted-dark) line-through decoration-rose-500/60" : "text-(--color-ink) dark:text-white"}`}>
+      <p className={`mt-4 leading-relaxed ${featured ? "" : "flex-1"} ${featured ? "font-heading text-xl sm:text-2xl md:text-[1.75rem] md:leading-snug tracking-[-0.01em] text-balance" : "text-base"} ${review.spam ? "text-(--color-muted) dark:text-(--color-muted-dark) line-through decoration-rose-500/60" : "text-(--color-ink) dark:text-white"}`}>
         &ldquo;{review.text}&rdquo;
       </p>
       <p className="mt-5 pt-4 border-t border-dashed border-(--color-border) dark:border-(--color-border-dark) flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold">
